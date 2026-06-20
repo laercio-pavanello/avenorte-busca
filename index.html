@@ -1,0 +1,178 @@
+
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busca Peças Avenorte</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+      .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1a73e8;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+      .sub {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+        #busca {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        #busca:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+      .item {
+            padding: 15px;
+            border: 1px solid #eee;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            background: #fafafa;
+            cursor: pointer;
+        }
+      .item:hover {
+            background: #f0f7ff;
+            border-color: #1a73e8;
+        }
+      .codigo {
+            font-weight: bold;
+            color: #1a73e8;
+            font-size: 16px;
+        }
+      .descricao {
+            color: #333;
+            margin-top: 5px;
+        }
+      .contador {
+            text-align: center;
+            color: #666;
+            margin-bottom: 15px;
+        }
+      .carregando {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+      .copiado {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4caf50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Busca Rápida - Peças Avenorte</h1>
+        <div class="sub">Clique no item pra copiar o código</div>
+        <input
+            type="text"
+            id="busca"
+            placeholder="Digite: mordaça, weg, sensor, 3600, usinox..."
+            autocomplete="off"
+        >
+        <div class="contador" id="contador"></div>
+        <div id="resultados" class="carregando">Carregando peças...</div>
+    </div>
+    <div class="copiado" id="copiado">Código copiado!</div>
+
+    <script>
+        const URL_PLANILHA = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZpGIwFTPXC-4PAnjjJSiijzTKLjv3M5xtNKnKf4ag5tGplU7kaAgSLZXo4vxE6I1nwZme74um9lQ4/pub?gid=0&single=true&output=csv';
+
+        let pecas = [];
+
+        async function carregarPlanilha() {
+            try {
+                const resposta = await fetch(URL_PLANILHA);
+                const texto = await resposta.text();
+                const linhas = texto.split('\n');
+
+                pecas = linhas.slice(1)
+                  .filter(linha => linha.trim())
+                  .map(linha => {
+                        const colunas = linha.split(',');
+                        return {
+                            codigo: colunas[0]?.trim() || '',
+                            descricao: colunas.slice(1).join(',').trim() || ''
+                        };
+                    });
+
+                document.getElementById('resultados').innerHTML = '';
+                document.getElementById('contador').textContent = `${pecas.length} peças carregadas. Digite para buscar.`;
+                document.getElementById('busca').focus();
+            } catch (erro) {
+                document.getElementById('resultados').innerHTML = 'Erro ao carregar planilha. Verifique se está publicada.';
+            }
+        }
+
+        function buscar() {
+            const termo = document.getElementById('busca').value.toLowerCase().trim();
+            const divResultados = document.getElementById('resultados');
+            const divContador = document.getElementById('contador');
+
+            if (termo === '') {
+                divResultados.innerHTML = '';
+                divContador.textContent = `${pecas.length} peças carregadas. Digite para buscar.`;
+                return;
+            }
+
+            const palavras = termo.split(' ').filter(p => p);
+
+            const resultados = pecas.filter(peca => {
+                const textoBusca = (peca.codigo + ' ' + peca.descricao).toLowerCase();
+                return palavras.every(palavra => textoBusca.includes(palavra));
+            });
+
+            divContador.textContent = `${resultados.length} resultado(s) encontrado(s)`;
+
+            if (resultados.length === 0) {
+                divResultados.innerHTML = '<div class="item">Nenhuma peça encontrada</div>';
+                return;
+            }
+
+            divResultados.innerHTML = resultados.map(peca => `
+                <div class="item" onclick="copiarCodigo('${peca.codigo}')">
+                    <div class="codigo">${peca.codigo}</div>
+                    <div class="descricao">${peca.descricao}</div>
+                </div>
+            `).join('');
+        }
+
+        function copiarCodigo(codigo) {
+            navigator.clipboard.writeText(codigo);
+            const msg = document.getElementById('copiado');
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 1500);
+        }
+
+        document.getElementById('busca').addEventListener('input', buscar);
+        carregarPlanilha();
+    </script>
+</body>
+</html>
