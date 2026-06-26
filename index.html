@@ -1,4 +1,95 @@
+<!DOCTYPE html>
 <html lang="pt-BR" class="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Busca de Peças - Avenorte</title>
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.webmanifest">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+<header class="sticky top-0 z-10 bg-slate-950/80 backdrop-blur border-b border-slate-800">
+<div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+<div class="text-xl font-semibold">Avenorte <span class="text-sky-400">Busca</span></div>
+<div class="ml-auto flex items-center gap-2">
+<span id="status" class="text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-300">Offline</span>
+<button id="btnAtualizar" class="text-sm px-3 py-1.5 rounded-xl bg-sky-500/10 text-sky-300 border border-sky-500/30 hover:bg-sky-500/20">Atualizar</button>
+</div></div></header>
+<main class="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
+<div class="grid md:grid-cols-3 gap-4 mb-6">
+<div class="md:col-span-2">
+<label class="text-sm text-slate-400">Buscar</label>
+<input id="q" type="search" placeholder="Código, descrição, setor..." class="w-full mt-1 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 outline-none focus:ring-2 focus:ring-sky-500">
+</div><div>
+<label class="text-sm text-slate-400">Filtrar por setor</label>
+<select id="setor" class="w-full mt-1 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 outline-none focus:ring-2 focus:ring-sky-500">
+<option value="">Todos</option>
+</select></div></div>
+<div class="flex items-center justify-between mb-3">
+<div class="text-sm text-slate-400"><span id="contagem">0</span> resultados</div>
+<div class="flex gap-2">
+<button id="btnBuscar" class="px-4 py-2 rounded-xl bg-sky-500 text-slate-950 font-medium hover:bg-sky-400">Buscar</button>
+<button id="btnAdicionar" class="px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700">Adicionar</button>
+</div></div>
+<div id="lista" class="grid gap-3"></div>
+</main>
+<dialog id="modalAdd" class="backdrop:bg-slate-950/70 p-0 rounded-2xl border border-slate-800 w-full max-w-lg">
+<form method="dialog" class="bg-slate-900 p-5">
+<h2 class="text-lg font-semibold mb-4">Adicionar item</h2>
+<div class="grid gap-3">
+<input id="fCodigo" placeholder="Código" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800">
+<input id="fDescricao" placeholder="Descrição" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800">
+<input id="fSetor" placeholder="Setor" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800">
+<input id="fObservacao" placeholder="Observação" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800">
+<input id="fTermos" placeholder="Termos de busca" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800">
+</div><div class="mt-5 flex justify-end gap-2">
+<button class="px-4 py-2 rounded-xl bg-slate-800">Cancelar</button>
+<button id="salvarAdd" class="px-4 py-2 rounded-xl bg-sky-500 text-slate-950">Salvar</button>
+</div></form></dialog>
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbx6SJaj9bU7yqZ7pt24wvBWP1kSPjgS5jULCYgLy6c4xK43HrbzHxZJM11RMlmYm7zO/exec"
+const STORAGE_KEY = "avenorte-cache-v1"
+const el = sel => document.querySelector(sel)
+const lista = el('#lista'), q = el('#q'), setor = el('#setor'), statusEl = el('#status')
+let dados = [], dadosFiltrados = []
+function salvarCache(arr){ localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)) }
+function carregarCache(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]') }catch{ return [] } }
+async function carregarDados(){
+statusEl.textContent = 'Online'
+statusEl.className = 'text-xs px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+try{
+const r = await fetch(API_URL)
+const j = await r.json()
+dados = j
+salvarCache(j)
+montarSetores()
+aplicarFiltro()
+}catch(e){
+statusEl.textContent = 'Offline'
+statusEl.className = 'text-xs px-2 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30'
+dados = carregarCache()
+montarSetores()
+aplicarFiltro()
+}}
+function montarSetores(){
+const setores = [...new Set(dados.map(x=>x.setor).filter(Boolean))].sort()
+setor.innerHTML = '<option value="">Todos</option>' + setores.map(s=>`<option>${s}</option>`).join('')
+}
+function aplicarFiltro(){
+const termo = q.value.toLowerCase().trim()
+const s = setor.value
+dadosFiltrados = dados.filter(item=>{
+const okSetor = !s || item.setor === s
+const texto = `${item.codigo} ${item.descricao} ${item.setor} ${item.observacao} ${item.termos_busca}`.toLowerCase()
+const okBusca = !termo || texto.includes(termo)
+return okSetor && okBusca
+})
+render()
+}
+function render(){
+el('#contagem').textContent = dadosFiltrados.length
+lista.innerHTML = dadosFiltrados.map(item=><html lang="pt-BR" class="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
