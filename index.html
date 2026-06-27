@@ -60,8 +60,8 @@ statusEl.className = 'text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-300
 try{
 const r = await fetch(API_URL)
 const j = await r.json()
-dados = j
-salvarCache(j)
+dados = j.itens || j
+salvarCache(dados)
 montarSetores()
 aplicarFiltro()
 statusEl.textContent = 'Online'
