@@ -102,19 +102,39 @@ ${item.observacao?`<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-3
 `).join('') || `<div class="text-center text-slate-500 py-10">Nenhum resultado</div>`
 }
 async function adicionarItem(obj){
-await fetch(API_URL, {method:'POST', body:JSON.stringify(obj)})
+statusEl.textContent = 'Salvando...'
+try{
+const r = await fetch(API_URL, {method:'POST', body:JSON.stringify(obj)})
+const res = await r.json()
+if(res.ok){
 await carregarDados()
+alert('Peça adicionada com sucesso!')
+return true
+} else {
+alert('Erro: ' + (res.erro || 'Não foi possível salvar'))
+statusEl.textContent = 'Online'
+return false
+}
+}catch(e){
+alert('Erro de conexão. Verifique o Apps Script.')
+statusEl.textContent = 'Online'
+return false
+}
 }
 el('#btnBuscar').onclick = aplicarFiltro
 el('#btnAtualizar').onclick = carregarDados
 el('#btnAdicionar').onclick = ()=> el('#modalAdd').showModal()
 el('#salvarAdd').onclick = async (e)=>{
 e.preventDefault()
-const obj = {codigo: el('#fCodigo').value,descricao: el('#fDescricao').value,setor: el('#fSetor').value,observacao: el('#fObservacao').value,termos_busca: el('#fTermos').value}
+const obj = {codigo: el('#fCodigo').value.trim(),descricao: el('#fDescricao').value.trim(),setor: el('#fSetor').value.trim(),observacao: el('#fObservacao').value.trim(),termos_busca: el('#fTermos').value.trim()}
 if(!obj.codigo) return alert('Código obrigatório')
-await adicionarItem(obj)
+const existe = dados.find(item => String(item.codigo) === String(obj.codigo))
+if(existe) return alert('Código já existe: ' + obj.codigo)
+const salvou = await adicionarItem(obj)
+if(salvou){
 el('#modalAdd').close()
 el('#modalAdd form').reset()
+}
 }
 q.oninput = aplicarFiltro
 setor.onchange = aplicarFiltro
