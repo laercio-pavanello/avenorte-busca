@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR" class="dark">
 <head>
@@ -17,16 +16,14 @@
 <button id="btnAtualizar" class="text-sm px-3 py-1.5 rounded-xl bg-sky-500/10 text-sky-300 border border-sky-500/30 hover:bg-sky-500/20">Atualizar</button>
 </div></div></header>
 <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
-
 <div class="flex gap-2 mb-6 bg-slate-900 p-1 rounded-2xl border border-slate-800">
   <button id="abaPecas" class="flex-1 px-4 py-2.5 rounded-xl bg-sky-500 text-slate-950 font-semibold">Peças</button>
   <button id="abaCCM" class="flex-1 px-4 py-2.5 rounded-xl bg-transparent text-slate-300 hover:bg-slate-800">CCM</button>
 </div>
-
 <div class="grid md:grid-cols-3 gap-4 mb-6">
 <div class="md:col-span-2">
 <label class="text-sm text-slate-400">Buscar</label>
-<input id="q" type="search" placeholder="Código, descrição, setor..." class="w-full mt-1 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-100 outline-none focus:ring-2 focus:ring-sky-500">
+<input id="q" type="search" placeholder="Código, descrição..." class="w-full mt-1 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-100 outline-none focus:ring-2 focus:ring-sky-500">
 </div><div>
 <label class="text-sm text-slate-400" id="labelFiltro">Filtrar por setor</label>
 <select id="setor" class="w-full mt-1 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-100 outline-none focus:ring-2 focus:ring-sky-500">
@@ -55,11 +52,14 @@
 </div></form></dialog>
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbxN2KbxFAMDRBba0LTF5aGUnLbLMKTLneKKywRrlPLtNQ_FpMvLoIUm1TdjBMjZ3xdE/exec"
-const STORAGE_KEY = "avenorte-cache-v1"
+const STORAGE_KEY = "avenorte-cache-v2"
 const el = sel => document.querySelector(sel)
 const lista = el('#lista'), q = el('#q'), setor = el('#setor'), statusEl = el('#status')
 let abaAtual = 'dados'
 let dados = [], dadosFiltrados = []
+
+const safe = s => String(s||'').toLowerCase().trim()
+const safeGet = (obj,...keys) => keys.reduce((o,k) => o && o[k]!== undefined? o[k] : '', obj)
 
 function salvarCache(arr){ localStorage.setItem(STORAGE_KEY + '-' + abaAtual, JSON.stringify(arr)) }
 function carregarCache(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY + '-' + abaAtual)||'[]') }catch{ return [] } }
@@ -70,13 +70,14 @@ statusEl.className = 'text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-300
 try{
 const r = await fetch(`${API_URL}?aba=${abaAtual}`)
 const j = await r.json()
-dados = j.itens || j
+dados = Array.isArray(j)? j : (j.itens || j.data || [])
 salvarCache(dados)
 montarSetores()
 aplicarFiltro()
 statusEl.textContent = 'Online'
 statusEl.className = 'text-xs px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
 }catch(e){
+console.error(e)
 statusEl.textContent = 'Offline'
 statusEl.className = 'text-xs px-2 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30'
 dados = carregarCache()
@@ -92,23 +93,31 @@ function atualizarLabels() {
   el('#fSetor').placeholder = isCCM? 'Porta' : 'Setor'
   el('#fObservacao').placeholder = isCCM? 'Ativa - SIM ou NÃO' : 'Observação'
   el('#tituloModal').textContent = isCCM? 'Adicionar tag CCM' : 'Adicionar peça'
-  q.placeholder = isCCM? 'Tag, nome, porta...' : 'Código, descrição, setor...'
+  q.placeholder = isCCM? 'Tag, nome, porta...' : 'Código, descrição...'
 }
 
 function montarSetores(){
 const campo = abaAtual === 'ccm'? 'porta' : 'setor'
 atualizarLabels()
-const setores = [...new Set(dados.map(x=>x[campo]).filter(Boolean))].sort()
+const setores = [...new Set(dados.map(x=>safeGet(x, campo)).filter(Boolean))].sort()
 setor.innerHTML = '<option value="">Todos</option>' + setores.map(s=>`<option>${s}</option>`).join('')
+el('#setor').parentElement.style.display = setores.length? 'block' : 'none'
 }
 
 function aplicarFiltro(){
-const termo = q.value.toLowerCase().trim()
+const termo = safe(q.value)
 const s = setor.value
 const campoSetor = abaAtual === 'ccm'? 'porta' : 'setor'
 dadosFiltrados = dados.filter(item=>{
-const okSetor =!s || item[campoSetor] === s
-const texto = `${item.codigo || item.tag} ${item.descricao || item.nome} ${item.setor || item.porta} ${item.observacao} ${item.ativa} ${item.termos_busca}`.toLowerCase()
+const okSetor =!s || safeGet(item, campoSetor) === s
+const texto = [
+  safeGet(item, 'codigo', 'tag'),
+  safeGet(item, 'descricao', 'nome'),
+  safeGet(item, 'setor', 'porta'),
+  safeGet(item, 'observacao'),
+  safeGet(item, 'ativa'),
+  safeGet(item, 'termos_busca')
+].join(' ')
 const okBusca =!termo || texto.includes(termo)
 return okSetor && okBusca
 })
@@ -120,25 +129,28 @@ el('#contagem').textContent = dadosFiltrados.length
 lista.innerHTML = dadosFiltrados.map(item=>{
 let statusHTML = ''
 if (abaAtual === 'ccm') {
-  const ativa = item.ativa? String(item.ativa).toUpperCase() : ''
+  const ativa = safeGet(item, 'ativa').toUpperCase()
   if (ativa === 'SIM') statusHTML = '<span class="px-2 py-1 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/30 text-xs">ATIVA</span>'
   else if (ativa === 'NÃO' || ativa === 'NAO') statusHTML = '<span class="px-2 py-1 rounded-full bg-red-500/10 text-red-300 border border-red-500/30 text-xs">INATIVA</span>'
   else statusHTML = '<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-400 text-xs">A VERIFICAR</span>'
 }
 
-const codigo = item.codigo || item.tag || '-'
-const desc = item.descricao || item.nome || ''
-const setorVal = item.setor || item.porta || 'Sem setor'
+const codigo = safeGet(item, 'codigo', 'tag') || '-'
+const desc = safeGet(item, 'descricao', 'nome') || ''
+const setorVal = safeGet(item, 'setor', 'porta')
+const obs = safeGet(item, 'observacao')
 
 return `
 <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-<div class="flex items-start justify-between gap-3"><div>
+<div class="flex items-start justify-between gap-3"><div class="flex-1">
 <div class="text-lg font-semibold text-slate-100">${codigo} ${statusHTML}</div>
 <div class="text-slate-300">${desc}</div>
+${setorVal || (obs && abaAtual!== 'ccm')? `
 <div class="mt-2 flex gap-2 text-xs">
-<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${setorVal}</span>
-${item.observacao && abaAtual!== 'ccm'?`<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${item.observacao}</span>`:''}
-</div></div></div></div>
+${setorVal? `<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${setorVal}</span>` : ''}
+${obs && abaAtual!== 'ccm'? `<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${obs}</span>` : ''}
+</div>` : ''}
+</div></div></div>
 `}).join('') || `<div class="text-center text-slate-500 py-10">Nenhum resultado</div>`
 }
 
@@ -158,20 +170,27 @@ function trocarAba(novaAba) {
 async function adicionarItem(obj){
 statusEl.textContent = 'Salvando...'
 try{
-const r = await fetch(`${API_URL}?aba=${abaAtual}`, {method:'POST', body:JSON.stringify(obj)})
+const r = await fetch(`${API_URL}?aba=${abaAtual}`, {
+  method:'POST',
+  headers: {'Content-Type': 'text/plain;charset=utf-8'},
+  body:JSON.stringify(obj)
+})
 const res = await r.json()
 if(res.ok){
 await carregarDados()
-alert('Item adicionado com sucesso!')
+statusEl.textContent = 'Salvo!'
+setTimeout(()=>statusEl.textContent = 'Online', 1500)
 return true
 } else {
+statusEl.textContent = 'Erro'
 alert('Erro: ' + (res.erro || 'Não foi possível salvar'))
-statusEl.textContent = 'Online'
+setTimeout(()=>statusEl.textContent = 'Online', 2000)
 return false
 }
 }catch(e){
+statusEl.textContent = 'Erro de conexão'
 alert('Erro de conexão. Verifique o Apps Script.')
-statusEl.textContent = 'Online'
+setTimeout(()=>statusEl.textContent = 'Online', 2000)
 return false
 }
 }
@@ -203,16 +222,21 @@ if(abaAtual === 'ccm') {
   delete obj.setor
   delete obj.observacao
 }
-if(!obj.codigo &&!obj.tag) return alert('Código/Tag obrigatório')
-const existe = dados.find(item => String(item.codigo || item.tag) === String(obj.codigo || obj.tag))
-if(existe) return alert('Código já existe: ' + (obj.codigo || obj.tag))
+const cod = obj.codigo || obj.tag
+if(!cod) return alert('Código/Tag obrigatório')
+const existe = dados.find(item => safe(safeGet(item, 'codigo', 'tag')) === safe(cod))
+if(existe) return alert('Código já existe: ' + cod)
 const salvou = await adicionarItem(obj)
 if(salvou){
 el('#modalAdd').close()
 el('#modalAdd form').reset()
 }
 }
-q.oninput = aplicarFiltro
+let debounce
+q.oninput = () => {
+  clearTimeout(debounce)
+  debounce = setTimeout(aplicarFiltro, 200)
+}
 setor.onchange = aplicarFiltro
 carregarDados()
 </script>
