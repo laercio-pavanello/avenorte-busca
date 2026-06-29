@@ -62,7 +62,7 @@
 
 <script src="dados-iniciais-v3.js?v=6"></script>
 <script>
-const API_PECAS_URL = "https://script.google.com/macros/s/AKfycbx6SJaj9bU7yqZ7pt24wvBWP1kSPjgS5jULCYgLy6c4xK43HrbzHxZJM11RMlmYm7zO/exec"
+const API_PECAS_URL = "https://script.google.com/macros/s/AKfycbzklyLQ3HZXRcey3pYi6B8oxCqiQKocTsdT_JtLmdaVmPHq5rUlOVjjh5dizT_Z9NZy/exec"
 const API_CCM_URL = API_PECAS_URL
 const STORAGE_KEY = "avenorte-cache-v3"
 const CSV_PECAS = ["lista_busca_google_sheets.csv"]
@@ -358,6 +358,28 @@ return false
 }
 }
 
+function acaoInvalida(res) {
+  const msg = `${res?.codigo || ''} ${res?.erro || ''} ${res?.mensagem || ''}`.toLowerCase()
+  return msg.includes('acao_invalida') || msg.includes('acao invalida') || msg.includes('ação inválida')
+}
+
+async function atualizarItemPorSubstituicao(obj, dadosAtualizados) {
+  const url = abaAtual === 'dados'? API_PECAS_URL : API_CCM_URL
+  const apagar = await chamarJsonp(url, {
+    acao: 'deletar',
+    aba: abaAtual,
+    linha: dadosAtualizados.linha,
+    codigo: dadosAtualizados.codigo_original,
+    tag: dadosAtualizados.codigo_original
+  })
+
+  if (!apagar.ok && !['nao_encontrado', 'não_encontrado'].includes(apagar.codigo)) {
+    return apagar
+  }
+
+  return chamarJsonp(url, {acao: 'cadastrar', aba: abaAtual, ...obj})
+}
+
 async function atualizarItem(obj){
 statusEl.textContent = 'Salvando...'
 try{
@@ -370,14 +392,15 @@ const dadosAtualizados = {
 const res = abaAtual === 'dados'
   ? await chamarJsonp(API_PECAS_URL, {acao: 'atualizar', aba: abaAtual, ...dadosAtualizados})
   : await chamarJsonp(API_CCM_URL, {acao: 'atualizar', aba: abaAtual, ...dadosAtualizados})
-if(res.ok){
+const finalRes = res.ok || !acaoInvalida(res)? res : await atualizarItemPorSubstituicao(obj, dadosAtualizados)
+if(finalRes.ok){
 await carregarDados()
 statusEl.textContent = 'Alterado!'
 setTimeout(()=>statusEl.textContent = 'Online', 1500)
 return true
 } else {
 statusEl.textContent = 'Erro'
-alert('Erro: ' + (res.erro || res.mensagem || 'Não foi possível alterar'))
+alert('Erro: ' + (finalRes.erro || finalRes.mensagem || 'Não foi possível alterar'))
 setTimeout(()=>statusEl.textContent = 'Online', 2000)
 return false
 }
