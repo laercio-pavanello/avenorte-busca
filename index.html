@@ -25,7 +25,12 @@
 <div class="grid md:grid-cols-3 gap-4 mb-6">
 <div class="md:col-span-2">
 <label class="text-sm text-slate-400">Buscar</label>
-<input id="q" type="search" placeholder="Código, descrição, setor..." class="w-full mt-1 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-100 outline-none focus:ring-2 focus:ring-sky-500">
+<div class="relative mt-1">
+  <input id="q" type="search" placeholder="Código, descrição, setor..." class="w-full px-4 py-3 pr-12 rounded-2xl bg-slate-900 border border-slate-800 text-slate-100 outline-none focus:ring-2 focus:ring-sky-500">
+  <button id="btnLimpar" class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800" title="Limpar busca">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+  </button>
+</div>
 </div><div>
 <label class="text-sm text-slate-400" id="labelFiltro">Filtrar por setor</label>
 <select id="setor" class="w-full mt-1 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-100 outline-none focus:ring-2 focus:ring-sky-500">
@@ -213,6 +218,7 @@ el('#modalAdd form').reset()
 }
 q.oninput = aplicarFiltro
 setor.onchange = aplicarFiltro
+el('#btnLimpar').onclick = () => { q.value = ''; aplicarFiltro(); q.focus(); }
 carregarDados()
 </script>
 </body>
