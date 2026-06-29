@@ -63,13 +63,14 @@
 <script src="dados-iniciais-v3.js?v=6"></script>
 <script>
 const API_PECAS_URL = "https://script.google.com/macros/s/AKfycbx6SJaj9bU7yqZ7pt24wvBWP1kSPjgS5jULCYgLy6c4xK43HrbzHxZJM11RMlmYm7zO/exec"
-const API_CCM_URL = "https://script.google.com/macros/s/AKfycbxN2KbxFAMDRBba0LTF5aGUnLbLMKTLneKKywRrlPLtNQ_FpMvLoIUm1TdjBMjZ3xdE/exec"
+const API_CCM_URL = API_PECAS_URL
 const STORAGE_KEY = "avenorte-cache-v3"
 const CSV_PECAS = ["lista_busca_google_sheets.csv"]
 const el = sel => document.querySelector(sel)
 const lista = el('#lista'), q = el('#q'), setor = el('#setor'), statusEl = el('#status')
 let abaAtual = 'dados'
 let dados = [], dadosFiltrados = []
+let itemEditando = null
 
 const texto = valor => String(valor ?? '').trim()
 const safe = valor => texto(valor).toLowerCase()
@@ -195,12 +196,7 @@ aplicarFiltro()
 }}
 
 function carregarApi() {
-  if (abaAtual === 'dados') {
-    return chamarJsonp(API_PECAS_URL, {acao: 'listar'})
-  }
-
-  return fetch(`${API_CCM_URL}?aba=${abaAtual}&t=${Date.now()}`, {cache:'no-store'})
-    .then(r => r.json())
+  return chamarJsonp(abaAtual === 'dados'? API_PECAS_URL : API_CCM_URL, {acao: 'listar', aba: abaAtual})
 }
 
 function chamarJsonp(url, params = {}) {
@@ -245,6 +241,13 @@ function atualizarLabels() {
   q.placeholder = isCCM? 'Tag, nome, porta...' : 'Código, descrição...'
 }
 
+function tituloFormulario() {
+  const acao = itemEditando? 'Editar' : 'Adicionar'
+  const tipo = abaAtual === 'ccm'? 'tag CCM' : 'peça'
+  el('#tituloModal').textContent = `${acao} ${tipo}`
+  el('#salvarAdd').textContent = itemEditando? 'Salvar alteração' : 'Salvar'
+}
+
 function montarSetores(){
 const campo = abaAtual === 'ccm'? 'porta' : 'setor'
 atualizarLabels()
@@ -282,7 +285,7 @@ function limparBusca() {
 
 function render(){
 el('#contagem').textContent = dadosFiltrados.length
-lista.innerHTML = dadosFiltrados.map(item=>{
+lista.innerHTML = dadosFiltrados.map((item, indice)=>{
 let statusHTML = ''
 if (abaAtual === 'ccm') {
   const ativa = pegar(item, 'ativa').toUpperCase()
@@ -298,7 +301,8 @@ const obs = pegar(item, 'observacao')
 
 return `
 <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-<div class="flex items-start justify-between gap-3"><div class="flex-1 min-w-0">
+<div class="flex items-start justify-between gap-3">
+<div class="flex-1 min-w-0">
 <div class="text-lg font-semibold text-slate-100 break-words">${escapar(codigo)} ${statusHTML}</div>
 ${desc? `<div class="text-slate-300 break-words">${escapar(desc)}</div>` : ''}
 ${setorVal || (obs && abaAtual !== 'ccm')? `
@@ -306,8 +310,14 @@ ${setorVal || (obs && abaAtual !== 'ccm')? `
 ${setorVal? `<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${escapar(setorVal)}</span>` : ''}
 ${obs && abaAtual !== 'ccm'? `<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${escapar(obs)}</span>` : ''}
 </div>` : ''}
-</div></div></div>
+</div>
+<button type="button" data-editar="${indice}" class="shrink-0 px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 hover:bg-slate-700">Editar</button>
+</div></div>
 `}).join('') || `<div class="text-center text-slate-500 py-10">Nenhum resultado</div>`
+
+lista.querySelectorAll('[data-editar]').forEach(botao => {
+  botao.onclick = () => abrirEditar(dadosFiltrados[Number(botao.dataset.editar)])
+})
 }
 
 function trocarAba(novaAba) {
@@ -327,12 +337,8 @@ async function adicionarItem(obj){
 statusEl.textContent = 'Salvando...'
 try{
 const res = abaAtual === 'dados'
-  ? await chamarJsonp(API_PECAS_URL, {acao: 'cadastrar', ...obj})
-  : await fetch(`${API_CCM_URL}?aba=${abaAtual}`, {
-      method:'POST',
-      headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body:JSON.stringify(obj)
-    }).then(r => r.json())
+  ? await chamarJsonp(API_PECAS_URL, {acao: 'cadastrar', aba: abaAtual, ...obj})
+  : await chamarJsonp(API_CCM_URL, {acao: 'cadastrar', aba: abaAtual, ...obj})
 if(res.ok){
 await carregarDados()
 statusEl.textContent = 'Salvo!'
@@ -352,6 +358,57 @@ return false
 }
 }
 
+async function atualizarItem(obj){
+statusEl.textContent = 'Salvando...'
+try{
+const original = itemEditando || {}
+const dadosAtualizados = {
+  ...obj,
+  linha: pegar(original, 'linha'),
+  codigo_original: pegar(original, 'codigo', 'tag')
+}
+const res = abaAtual === 'dados'
+  ? await chamarJsonp(API_PECAS_URL, {acao: 'atualizar', aba: abaAtual, ...dadosAtualizados})
+  : await chamarJsonp(API_CCM_URL, {acao: 'atualizar', aba: abaAtual, ...dadosAtualizados})
+if(res.ok){
+await carregarDados()
+statusEl.textContent = 'Alterado!'
+setTimeout(()=>statusEl.textContent = 'Online', 1500)
+return true
+} else {
+statusEl.textContent = 'Erro'
+alert('Erro: ' + (res.erro || res.mensagem || 'Não foi possível alterar'))
+setTimeout(()=>statusEl.textContent = 'Online', 2000)
+return false
+}
+}catch(e){
+statusEl.textContent = 'Erro de conexão'
+alert('Erro de conexão. Verifique o Apps Script.')
+setTimeout(()=>statusEl.textContent = 'Online', 2000)
+return false
+}
+}
+
+function abrirAdicionar() {
+  itemEditando = null
+  atualizarLabels()
+  tituloFormulario()
+  el('#modalAdd form').reset()
+  el('#modalAdd').showModal()
+}
+
+function abrirEditar(item) {
+  itemEditando = item
+  atualizarLabels()
+  tituloFormulario()
+  el('#fCodigo').value = pegar(item, 'codigo', 'tag')
+  el('#fDescricao').value = pegar(item, 'descricao', 'nome')
+  el('#fSetor').value = pegar(item, 'setor', 'porta')
+  el('#fObservacao').value = abaAtual === 'ccm'? pegar(item, 'ativa') : pegar(item, 'observacao')
+  el('#fTermos').value = pegar(item, 'termos_busca')
+  el('#modalAdd').showModal()
+}
+
 function escapar(valor) {
   return String(valor ?? '')
     .replace(/&/g, '&amp;')
@@ -367,8 +424,7 @@ el('#btnBuscar').onclick = aplicarFiltro
 el('#btnLimpar').onclick = limparBusca
 el('#btnAtualizar').onclick = carregarDados
 el('#btnAdicionar').onclick = ()=> {
-  atualizarLabels()
-  el('#modalAdd').showModal()
+  abrirAdicionar()
 }
 el('#salvarAdd').onclick = async (e)=>{
 e.preventDefault()
@@ -391,12 +447,14 @@ if(abaAtual === 'ccm') {
 }
 const cod = obj.codigo || obj.tag
 if(!cod) return alert('Código/Tag obrigatório')
-const existe = dados.find(item => semAcento(pegar(item, 'codigo', 'tag')) === semAcento(cod))
+const codigoOriginal = itemEditando? semAcento(pegar(itemEditando, 'codigo', 'tag')) : ''
+const existe = dados.find(item => semAcento(pegar(item, 'codigo', 'tag')) === semAcento(cod) && semAcento(pegar(item, 'codigo', 'tag')) !== codigoOriginal)
 if(existe) return alert('Código já existe: ' + cod)
-const salvou = await adicionarItem(obj)
+const salvou = itemEditando? await atualizarItem(obj) : await adicionarItem(obj)
 if(salvou){
 el('#modalAdd').close()
 el('#modalAdd form').reset()
+itemEditando = null
 }
 }
 let debounce
