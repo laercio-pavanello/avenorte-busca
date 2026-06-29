@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="pt-BR" class="dark">
 <head>
 <meta charset="utf-8">
@@ -17,7 +17,6 @@
 </div></div></header>
 <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
 
-<!-- ABAS PEÇAS / CCM - ÚNICA COISA NOVA -->
 <div class="flex gap-2 mb-6 bg-slate-900 p-1 rounded-2xl border border-slate-800">
   <button id="abaPecas" class="flex-1 px-4 py-2.5 rounded-xl bg-sky-500 text-slate-950 font-semibold">Peças</button>
   <button id="abaCCM" class="flex-1 px-4 py-2.5 rounded-xl bg-transparent text-slate-300 hover:bg-slate-800">CCM</button>
@@ -58,7 +57,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycby5yASn1YT6W4V6g2aDycz3
 const STORAGE_KEY = "avenorte-cache-v1"
 const el = sel => document.querySelector(sel)
 const lista = el('#lista'), q = el('#q'), setor = el('#setor'), statusEl = el('#status')
-let abaAtual = 'dados' // dados = Peças, ccm = CCM
+let abaAtual = 'dados'
 let dados = [], dadosFiltrados = []
 
 function salvarCache(arr){ localStorage.setItem(STORAGE_KEY + '-' + abaAtual, JSON.stringify(arr)) }
@@ -87,6 +86,8 @@ aplicarFiltro()
 function montarSetores(){
 const campo = abaAtual === 'ccm'? 'porta' : 'setor'
 el('#labelFiltro').textContent = abaAtual === 'ccm'? 'Filtrar por porta' : 'Filtrar por setor'
+el('#fSetor').placeholder = abaAtual === 'ccm'? 'Porta' : 'Setor'
+q.placeholder = abaAtual === 'ccm'? 'Tag, nome, porta...' : 'Código, descrição, setor...'
 const setores = [...new Set(dados.map(x=>x[campo]).filter(Boolean))].sort()
 setor.innerHTML = '<option value="">Todos</option>' + setores.map(s=>`<option>${s}</option>`).join('')
 }
