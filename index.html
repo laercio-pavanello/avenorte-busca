@@ -15,28 +15,35 @@
 <span id="status" class="text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-300">Carregando...</span>
 <button id="btnAtualizar" class="text-sm px-3 py-1.5 rounded-xl bg-sky-500/10 text-sky-300 border border-sky-500/30 hover:bg-sky-500/20">Atualizar</button>
 </div></div></header>
+
 <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
 <div class="flex gap-2 mb-6 bg-slate-900 p-1 rounded-2xl border border-slate-800">
   <button id="abaPecas" class="flex-1 px-4 py-2.5 rounded-xl bg-sky-500 text-slate-950 font-semibold">Peças</button>
   <button id="abaCCM" class="flex-1 px-4 py-2.5 rounded-xl bg-transparent text-slate-300 hover:bg-slate-800">CCM</button>
 </div>
+
 <div class="grid md:grid-cols-3 gap-4 mb-6">
 <div class="md:col-span-2">
 <label class="text-sm text-slate-400">Buscar</label>
 <input id="q" type="search" placeholder="Código, descrição..." class="w-full mt-1 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-100 outline-none focus:ring-2 focus:ring-sky-500">
-</div><div>
+</div>
+<div id="filtroWrap">
 <label class="text-sm text-slate-400" id="labelFiltro">Filtrar por setor</label>
 <select id="setor" class="w-full mt-1 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-100 outline-none focus:ring-2 focus:ring-sky-500">
 <option value="">Todos</option>
-</select></div></div>
-<div class="flex items-center justify-between mb-3">
-<div class="text-sm text-slate-400"><span id="contagem">0</span> resultados</div>
+</select>
+</div></div>
+
+<div class="flex items-center justify-between gap-3 mb-3">
+<div class="text-sm text-sky-200"><span id="contagem">0</span> resultados</div>
 <div class="flex gap-2">
 <button id="btnBuscar" class="px-4 py-2 rounded-xl bg-sky-500 text-slate-950 font-medium hover:bg-sky-400">Buscar</button>
 <button id="btnAdicionar" class="px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700">Adicionar</button>
 </div></div>
+
 <div id="lista" class="grid gap-3"></div>
 </main>
+
 <dialog id="modalAdd" class="backdrop:bg-slate-950/70 p-0 rounded-2xl border border-slate-800 w-full max-w-lg">
 <form method="dialog" class="bg-slate-900 p-5">
 <h2 class="text-lg font-semibold mb-4 text-slate-100" id="tituloModal">Adicionar item</h2>
@@ -46,31 +53,131 @@
 <input id="fSetor" placeholder="Setor" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500">
 <input id="fObservacao" placeholder="Observação" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500">
 <input id="fTermos" placeholder="Termos de busca" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500">
-</div><div class="mt-5 flex justify-end gap-2">
+</div>
+<div class="mt-5 flex justify-end gap-2">
 <button class="px-4 py-2 rounded-xl bg-slate-800 text-slate-100">Cancelar</button>
 <button id="salvarAdd" class="px-4 py-2 rounded-xl bg-sky-500 text-slate-950">Salvar</button>
 </div></form></dialog>
+
+<script src="dados-iniciais-v3.js?v=6"></script>
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbxN2KbxFAMDRBba0LTF5aGUnLbLMKTLneKKywRrlPLtNQ_FpMvLoIUm1TdjBMjZ3xdE/exec"
-const STORAGE_KEY = "avenorte-cache-v2"
+const API_PECAS_URL = "https://script.google.com/macros/s/AKfycbx6SJaj9bU7yqZ7pt24wvBWP1kSPjgS5jULCYgLy6c4xK43HrbzHxZJM11RMlmYm7zO/exec"
+const API_CCM_URL = "https://script.google.com/macros/s/AKfycbxN2KbxFAMDRBba0LTF5aGUnLbLMKTLneKKywRrlPLtNQ_FpMvLoIUm1TdjBMjZ3xdE/exec"
+const STORAGE_KEY = "avenorte-cache-v3"
+const CSV_PECAS = ["lista_busca_google_sheets.csv"]
 const el = sel => document.querySelector(sel)
 const lista = el('#lista'), q = el('#q'), setor = el('#setor'), statusEl = el('#status')
 let abaAtual = 'dados'
 let dados = [], dadosFiltrados = []
 
-const safe = s => String(s||'').toLowerCase().trim()
-const safeGet = (obj,...keys) => keys.reduce((o,k) => o && o[k]!== undefined? o[k] : '', obj)
+const texto = valor => String(valor ?? '').trim()
+const safe = valor => texto(valor).toLowerCase()
+const semAcento = valor => safe(valor).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+const pegar = (obj, ...keys) => {
+  for (const key of keys) {
+    const valor = texto(obj?.[key])
+    if (valor) return valor
+  }
+  return ''
+}
 
 function salvarCache(arr){ localStorage.setItem(STORAGE_KEY + '-' + abaAtual, JSON.stringify(arr)) }
 function carregarCache(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY + '-' + abaAtual)||'[]') }catch{ return [] } }
+
+function normalizarItem(item) {
+  const codigo = pegar(item, 'codigo', 'tag')
+  const descricao = pegar(item, 'descricao', 'nome')
+  const setor = pegar(item, 'setor', 'porta')
+  const observacao = pegar(item, 'observacao')
+  const ativa = pegar(item, 'ativa')
+  const termosBusca = [codigo, descricao, setor, observacao, ativa, pegar(item, 'termos_busca')].join(' ')
+
+  return {
+    ...item,
+    codigo,
+    descricao,
+    setor,
+    observacao,
+    ativa,
+    termos_busca: termosBusca
+  }
+}
+
+function juntarListas(...listas) {
+  const mapa = new Map()
+  listas.flat().forEach(itemOriginal => {
+    const item = normalizarItem(itemOriginal || {})
+    const chave = semAcento(pegar(item, 'codigo', 'tag') || `${pegar(item, 'descricao', 'nome')} ${pegar(item, 'setor', 'porta')}`)
+    if (!chave) return
+    mapa.set(chave, { ...(mapa.get(chave) || {}), ...item })
+  })
+  return [...mapa.values()].sort((a,b)=>pegar(a, 'codigo', 'tag').localeCompare(pegar(b, 'codigo', 'tag'), 'pt-BR', {numeric:true}))
+}
+
+function dadosEmbutidos() {
+  return Array.isArray(window.DADOS_INICIAIS)? window.DADOS_INICIAIS : []
+}
+
+async function carregarCsvsPecas() {
+  const listas = await Promise.all(CSV_PECAS.map(async arquivo => {
+    const resposta = await fetch(`${arquivo}?v=6`, {cache:'no-store'})
+    if (!resposta.ok) throw new Error(`Nao carregou ${arquivo}`)
+    return csvParaItens(await resposta.text())
+  }))
+  return listas.flat()
+}
+
+function csvParaItens(csv) {
+  const linhas = separarCsv(csv)
+  const cabecalho = (linhas.shift() || []).map(coluna => semAcento(coluna))
+  return linhas.map(linha => {
+    const item = {}
+    cabecalho.forEach((coluna, indice) => item[coluna] = linha[indice] || '')
+    return item
+  })
+}
+
+function separarCsv(csv) {
+  const linhas = []
+  let linha = [], campo = '', dentroAspas = false
+  for (let i = 0; i < csv.length; i++) {
+    const char = csv[i], proximo = csv[i + 1]
+    if (char === '"' && dentroAspas && proximo === '"') {
+      campo += '"'
+      i++
+    } else if (char === '"') {
+      dentroAspas = !dentroAspas
+    } else if (char === ',' && !dentroAspas) {
+      linha.push(campo)
+      campo = ''
+    } else if ((char === '\n' || char === '\r') && !dentroAspas) {
+      if (char === '\r' && proximo === '\n') i++
+      linha.push(campo)
+      if (linha.some(valor => texto(valor))) linhas.push(linha)
+      linha = []
+      campo = ''
+    } else {
+      campo += char
+    }
+  }
+  linha.push(campo)
+  if (linha.some(valor => texto(valor))) linhas.push(linha)
+  return linhas
+}
 
 async function carregarDados(){
 statusEl.textContent = 'Carregando...'
 statusEl.className = 'text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-300'
 try{
-const r = await fetch(`${API_URL}?aba=${abaAtual}`)
-const j = await r.json()
-dados = Array.isArray(j)? j : (j.itens || j.data || [])
+const j = await carregarApi()
+const dadosApi = Array.isArray(j)? j : (j.itens || j.data || [])
+if (abaAtual === 'dados') {
+  let dadosCsv = []
+  try { dadosCsv = await carregarCsvsPecas() } catch(e) { console.warn(e) }
+  dados = juntarListas(dadosEmbutidos(), dadosCsv, dadosApi)
+} else {
+  dados = juntarListas(dadosApi)
+}
 salvarCache(dados)
 montarSetores()
 aplicarFiltro()
@@ -81,9 +188,50 @@ console.error(e)
 statusEl.textContent = 'Offline'
 statusEl.className = 'text-xs px-2 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30'
 dados = carregarCache()
+if (abaAtual === 'dados') dados = juntarListas(dados, dadosEmbutidos())
 montarSetores()
 aplicarFiltro()
 }}
+
+function carregarApi() {
+  if (abaAtual === 'dados') {
+    return chamarJsonp(API_PECAS_URL, {acao: 'listar'})
+  }
+
+  return fetch(`${API_CCM_URL}?aba=${abaAtual}&t=${Date.now()}`, {cache:'no-store'})
+    .then(r => r.json())
+}
+
+function chamarJsonp(url, params = {}) {
+  return new Promise((resolve, reject) => {
+    const callback = `avenorte_${Date.now()}_${Math.random().toString(36).slice(2)}`
+    const script = document.createElement('script')
+    const query = new URLSearchParams({...params, callback, t: Date.now()})
+    const timer = setTimeout(() => {
+      limpar()
+      reject(new Error('Tempo esgotado ao carregar planilha.'))
+    }, 15000)
+
+    function limpar() {
+      clearTimeout(timer)
+      delete window[callback]
+      script.remove()
+    }
+
+    window[callback] = resposta => {
+      limpar()
+      resolve(resposta || {itens: []})
+    }
+
+    script.onerror = () => {
+      limpar()
+      reject(new Error('Nao consegui carregar a planilha.'))
+    }
+
+    script.src = `${url}?${query.toString()}`
+    document.body.appendChild(script)
+  })
+}
 
 function atualizarLabels() {
   const isCCM = abaAtual === 'ccm'
@@ -99,26 +247,26 @@ function atualizarLabels() {
 function montarSetores(){
 const campo = abaAtual === 'ccm'? 'porta' : 'setor'
 atualizarLabels()
-const setores = [...new Set(dados.map(x=>safeGet(x, campo)).filter(Boolean))].sort()
-setor.innerHTML = '<option value="">Todos</option>' + setores.map(s=>`<option>${s}</option>`).join('')
-el('#setor').parentElement.style.display = setores.length? 'block' : 'none'
+const setores = [...new Set(dados.map(x=>pegar(x, campo)).filter(Boolean))].sort((a,b)=>a.localeCompare(b, 'pt-BR', {numeric:true}))
+setor.innerHTML = '<option value="">Todos</option>' + setores.map(s=>`<option>${escapar(s)}</option>`).join('')
+el('#filtroWrap').style.display = setores.length? 'block' : 'none'
 }
 
 function aplicarFiltro(){
-const termo = safe(q.value)
+const termo = semAcento(q.value)
 const s = setor.value
 const campoSetor = abaAtual === 'ccm'? 'porta' : 'setor'
 dadosFiltrados = dados.filter(item=>{
-const okSetor =!s || safeGet(item, campoSetor) === s
-const texto = [
-  safeGet(item, 'codigo', 'tag'),
-  safeGet(item, 'descricao', 'nome'),
-  safeGet(item, 'setor', 'porta'),
-  safeGet(item, 'observacao'),
-  safeGet(item, 'ativa'),
-  safeGet(item, 'termos_busca')
+const okSetor = !s || pegar(item, campoSetor) === s
+const base = [
+  pegar(item, 'codigo', 'tag'),
+  pegar(item, 'descricao', 'nome'),
+  pegar(item, 'setor', 'porta'),
+  pegar(item, 'observacao'),
+  pegar(item, 'ativa'),
+  pegar(item, 'termos_busca')
 ].join(' ')
-const okBusca =!termo || texto.includes(termo)
+const okBusca = !termo || semAcento(base).includes(termo)
 return okSetor && okBusca
 })
 render()
@@ -129,26 +277,26 @@ el('#contagem').textContent = dadosFiltrados.length
 lista.innerHTML = dadosFiltrados.map(item=>{
 let statusHTML = ''
 if (abaAtual === 'ccm') {
-  const ativa = safeGet(item, 'ativa').toUpperCase()
+  const ativa = pegar(item, 'ativa').toUpperCase()
   if (ativa === 'SIM') statusHTML = '<span class="px-2 py-1 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/30 text-xs">ATIVA</span>'
   else if (ativa === 'NÃO' || ativa === 'NAO') statusHTML = '<span class="px-2 py-1 rounded-full bg-red-500/10 text-red-300 border border-red-500/30 text-xs">INATIVA</span>'
   else statusHTML = '<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-400 text-xs">A VERIFICAR</span>'
 }
 
-const codigo = safeGet(item, 'codigo', 'tag') || '-'
-const desc = safeGet(item, 'descricao', 'nome') || ''
-const setorVal = safeGet(item, 'setor', 'porta')
-const obs = safeGet(item, 'observacao')
+const codigo = pegar(item, 'codigo', 'tag') || '-'
+const desc = pegar(item, 'descricao', 'nome')
+const setorVal = pegar(item, 'setor', 'porta')
+const obs = pegar(item, 'observacao')
 
 return `
 <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-<div class="flex items-start justify-between gap-3"><div class="flex-1">
-<div class="text-lg font-semibold text-slate-100">${codigo} ${statusHTML}</div>
-<div class="text-slate-300">${desc}</div>
-${setorVal || (obs && abaAtual!== 'ccm')? `
-<div class="mt-2 flex gap-2 text-xs">
-${setorVal? `<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${setorVal}</span>` : ''}
-${obs && abaAtual!== 'ccm'? `<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${obs}</span>` : ''}
+<div class="flex items-start justify-between gap-3"><div class="flex-1 min-w-0">
+<div class="text-lg font-semibold text-slate-100 break-words">${escapar(codigo)} ${statusHTML}</div>
+${desc? `<div class="text-slate-300 break-words">${escapar(desc)}</div>` : ''}
+${setorVal || (obs && abaAtual !== 'ccm')? `
+<div class="mt-2 flex flex-wrap gap-2 text-xs">
+${setorVal? `<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${escapar(setorVal)}</span>` : ''}
+${obs && abaAtual !== 'ccm'? `<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${escapar(obs)}</span>` : ''}
 </div>` : ''}
 </div></div></div>
 `}).join('') || `<div class="text-center text-slate-500 py-10">Nenhum resultado</div>`
@@ -170,12 +318,13 @@ function trocarAba(novaAba) {
 async function adicionarItem(obj){
 statusEl.textContent = 'Salvando...'
 try{
-const r = await fetch(`${API_URL}?aba=${abaAtual}`, {
-  method:'POST',
-  headers: {'Content-Type': 'text/plain;charset=utf-8'},
-  body:JSON.stringify(obj)
-})
-const res = await r.json()
+const res = abaAtual === 'dados'
+  ? await chamarJsonp(API_PECAS_URL, {acao: 'cadastrar', ...obj})
+  : await fetch(`${API_CCM_URL}?aba=${abaAtual}`, {
+      method:'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body:JSON.stringify(obj)
+    }).then(r => r.json())
 if(res.ok){
 await carregarDados()
 statusEl.textContent = 'Salvo!'
@@ -193,6 +342,15 @@ alert('Erro de conexão. Verifique o Apps Script.')
 setTimeout(()=>statusEl.textContent = 'Online', 2000)
 return false
 }
+}
+
+function escapar(valor) {
+  return String(valor ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
 }
 
 el('#abaPecas').onclick = () => trocarAba('dados')
@@ -224,7 +382,7 @@ if(abaAtual === 'ccm') {
 }
 const cod = obj.codigo || obj.tag
 if(!cod) return alert('Código/Tag obrigatório')
-const existe = dados.find(item => safe(safeGet(item, 'codigo', 'tag')) === safe(cod))
+const existe = dados.find(item => semAcento(pegar(item, 'codigo', 'tag')) === semAcento(cod))
 if(existe) return alert('Código já existe: ' + cod)
 const salvou = await adicionarItem(obj)
 if(salvou){
@@ -238,6 +396,11 @@ q.oninput = () => {
   debounce = setTimeout(aplicarFiltro, 200)
 }
 setor.onchange = aplicarFiltro
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations()
+    .then(registros => registros.forEach(registro => registro.unregister()))
+    .catch(() => {})
+}
 carregarDados()
 </script>
 </body>
