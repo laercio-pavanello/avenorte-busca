@@ -38,6 +38,7 @@
 <div class="text-sm text-sky-200"><span id="contagem">0</span> resultados</div>
 <div class="flex gap-2">
 <button id="btnBuscar" class="px-4 py-2 rounded-xl bg-sky-500 text-slate-950 font-medium hover:bg-sky-400">Buscar</button>
+<button id="btnLimpar" class="px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700">Limpar</button>
 <button id="btnAdicionar" class="px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700">Adicionar</button>
 </div></div>
 
@@ -272,6 +273,13 @@ return okSetor && okBusca
 render()
 }
 
+function limparBusca() {
+  q.value = ''
+  setor.value = ''
+  aplicarFiltro()
+  q.focus()
+}
+
 function render(){
 el('#contagem').textContent = dadosFiltrados.length
 lista.innerHTML = dadosFiltrados.map(item=>{
@@ -356,6 +364,7 @@ function escapar(valor) {
 el('#abaPecas').onclick = () => trocarAba('dados')
 el('#abaCCM').onclick = () => trocarAba('ccm')
 el('#btnBuscar').onclick = aplicarFiltro
+el('#btnLimpar').onclick = limparBusca
 el('#btnAtualizar').onclick = carregarDados
 el('#btnAdicionar').onclick = ()=> {
   atualizarLabels()
