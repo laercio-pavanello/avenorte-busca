@@ -311,12 +311,18 @@ ${setorVal? `<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${
 ${obs && abaAtual !== 'ccm'? `<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${escapar(obs)}</span>` : ''}
 </div>` : ''}
 </div>
-<button type="button" data-editar="${indice}" class="shrink-0 px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 hover:bg-slate-700">Editar</button>
+<div class="shrink-0 flex flex-col gap-2">
+<button type="button" data-editar="${indice}" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 hover:bg-slate-700">Editar</button>
+<button type="button" data-excluir="${indice}" class="px-3 py-1.5 rounded-xl bg-transparent border border-red-500/20 text-red-300/70 hover:bg-red-500/10 hover:text-red-200 text-xs">Excluir</button>
+</div>
 </div></div>
 `}).join('') || `<div class="text-center text-slate-500 py-10">Nenhum resultado</div>`
 
 lista.querySelectorAll('[data-editar]').forEach(botao => {
   botao.onclick = () => abrirEditar(dadosFiltrados[Number(botao.dataset.editar)])
+})
+lista.querySelectorAll('[data-excluir]').forEach(botao => {
+  botao.onclick = () => excluirItem(dadosFiltrados[Number(botao.dataset.excluir)])
 })
 }
 
@@ -365,9 +371,13 @@ function acaoInvalida(res) {
 
 async function atualizarItemPorSubstituicao(obj, dadosAtualizados) {
   const url = abaAtual === 'dados'? API_PECAS_URL : API_CCM_URL
+  const senha = prompt('Senha para substituir este item')
+  if (senha === null) return {ok: false, mensagem: 'Operação cancelada.'}
+  if (!/^\d{4}$/.test(senha)) return {ok: false, mensagem: 'A senha precisa ter 4 dígitos.'}
   const apagar = await chamarJsonp(url, {
     acao: 'deletar',
     aba: abaAtual,
+    senha,
     linha: dadosAtualizados.linha,
     codigo: dadosAtualizados.codigo_original,
     tag: dadosAtualizados.codigo_original
@@ -378,6 +388,47 @@ async function atualizarItemPorSubstituicao(obj, dadosAtualizados) {
   }
 
   return chamarJsonp(url, {acao: 'cadastrar', aba: abaAtual, ...obj})
+}
+
+async function excluirItem(item) {
+  const codigo = pegar(item, 'codigo', 'tag')
+  const senha = prompt(`Senha para excluir "${codigo}"`)
+  if (senha === null) return
+  if (!/^\d{4}$/.test(senha)) {
+    alert('A senha precisa ter 4 dígitos.')
+    return
+  }
+
+  const confirmar = confirm(`Excluir "${codigo}" da planilha?`)
+  if (!confirmar) return
+
+  statusEl.textContent = 'Excluindo...'
+  try {
+    const url = abaAtual === 'dados'? API_PECAS_URL : API_CCM_URL
+    const res = await chamarJsonp(url, {
+      acao: 'deletar',
+      aba: abaAtual,
+      senha,
+      linha: pegar(item, 'linha'),
+      codigo,
+      tag: codigo
+    })
+
+    if (res.ok) {
+      await carregarDados()
+      statusEl.textContent = 'Excluído!'
+      setTimeout(()=>statusEl.textContent = 'Online', 1500)
+      return
+    }
+
+    statusEl.textContent = 'Erro'
+    alert('Erro: ' + (res.erro || res.mensagem || 'Não foi possível excluir'))
+    setTimeout(()=>statusEl.textContent = 'Online', 2000)
+  } catch(e) {
+    statusEl.textContent = 'Erro de conexão'
+    alert('Erro de conexão. Verifique o Apps Script.')
+    setTimeout(()=>statusEl.textContent = 'Online', 2000)
+  }
 }
 
 async function atualizarItem(obj){
