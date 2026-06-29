@@ -1,202 +1,204 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Avenorte Busca</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0f1419;
-      color: #e7e9ea;
-      padding: 20px;
-    }
-  .container { max-width: 800px; margin: 0 auto; }
-    h1 { font-size: 28px; margin-bottom: 20px; }
-    h1 span { color: #1d9bf0; }
-  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-  .status { display: flex; gap: 10px; align-items: center; }
-  .online { background: #00ba7c; padding: 6px 12px; border-radius: 20px; font-size: 14px; }
-  .btn-atualizar {
-      background: #1d9bf0; border: none; color: white; padding: 8px 16px;
-      border-radius: 20px; cursor: pointer; font-weight: 600;
-    }
-
-    /* Abas Peças / CCM */
-  .abas {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 20px;
-    }
-  .abas button {
-      flex: 1;
-      padding: 12px;
-      border: 1px solid #2f3336;
-      background: #16181c;
-      color: #e7e9ea;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      border-radius: 8px;
-    }
-  .abas button.ativo {
-      background: #1d9bf0;
-      border-color: #1d9bf0;
-      color: white;
-    }
-
-  .filtros { display: flex; gap: 10px; margin-bottom: 15px; }
-  .filtros input,.filtros select {
-      flex: 1;
-      padding: 12px;
-      background: #202327;
-      border: 1px solid #2f3336;
-      border-radius: 8px;
-      color: #e7e9ea;
-      font-size: 15px;
-    }
-  .acoes { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-  .acoes button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 20px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-  .btn-buscar { background: #1d9bf0; color: white; }
-  .btn-adicionar { background: #2f3336; color: #e7e9ea; }
-
-  .card {
-      background: #16181c;
-      border: 1px solid #2f3336;
-      padding: 16px;
-      margin-bottom: 12px;
-      border-radius: 12px;
-    }
-  .card strong { font-size: 17px; color: #e7e9ea; }
-  .card p { color: #71767b; margin: 6px 0; }
-  .card.tag {
-      display: inline-block;
-      background: #202327;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 13px;
-      color: #71767b;
-      margin-top: 8px;
-    }
-  .status-ccm {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-left: 8px;
-    }
-  .status-sim { background: #1d9bf0; color: white; }
-  .status-nao { background: #f4212e; color: white; }
-  .status-vazio { background: #2f3336; color: #71767b; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Busca de Peças - Avenorte</title>
+<meta name="theme-color" content="#0f172a">
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>Avenorte <span>Busca</span></h1>
-      <div class="status">
-        <span class="online">Online</span>
-        <button class="btn-atualizar" onclick="carregarDados()">Atualizar</button>
-      </div>
-    </div>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+<header class="sticky top-0 z-10 bg-slate-950/80 backdrop-blur border-b border-slate-800">
+<div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+<div class="text-xl font-semibold">Avenorte <span class="text-sky-400">Busca</span></div>
+<div class="ml-auto flex items-center gap-2">
+<span id="status" class="text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-300">Carregando...</span>
+<button id="btnAtualizar" class="text-sm px-3 py-1.5 rounded-xl bg-sky-500/10 text-sky-300 border border-sky-500/30 hover:bg-sky-500/20">Atualizar</button>
+</div></div></header>
+<main class="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
 
-    <div class="abas">
-      <button id="btnPecas" class="ativo" onclick="trocarAba('dados')">Peças</button>
-      <button id="btnCCM" onclick="trocarAba('ccm')">CCM</button>
-    </div>
+<!-- ABAS PEÇAS / CCM - ÚNICA COISA NOVA -->
+<div class="flex gap-2 mb-6 bg-slate-900 p-1 rounded-2xl border border-slate-800">
+  <button id="abaPecas" class="flex-1 px-4 py-2.5 rounded-xl bg-sky-500 text-slate-950 font-semibold">Peças</button>
+  <button id="abaCCM" class="flex-1 px-4 py-2.5 rounded-xl bg-transparent text-slate-300 hover:bg-slate-800">CCM</button>
+</div>
 
-    <div class="filtros">
-      <input type="text" id="busca" placeholder="Código, descrição, setor..." oninput="buscar()">
-      <select id="filtroSetor" onchange="buscar()">
-        <option value="">Todos</option>
-      </select>
-    </div>
+<div class="grid md:grid-cols-3 gap-4 mb-6">
+<div class="md:col-span-2">
+<label class="text-sm text-slate-400">Buscar</label>
+<input id="q" type="search" placeholder="Código, descrição, setor..." class="w-full mt-1 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-100 outline-none focus:ring-2 focus:ring-sky-500">
+</div><div>
+<label class="text-sm text-slate-400" id="labelFiltro">Filtrar por setor</label>
+<select id="setor" class="w-full mt-1 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-100 outline-none focus:ring-2 focus:ring-sky-500">
+<option value="">Todos</option>
+</select></div></div>
+<div class="flex items-center justify-between mb-3">
+<div class="text-sm text-slate-400"><span id="contagem">0</span> resultados</div>
+<div class="flex gap-2">
+<button id="btnBuscar" class="px-4 py-2 rounded-xl bg-sky-500 text-slate-950 font-medium hover:bg-sky-400">Buscar</button>
+<button id="btnAdicionar" class="px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700">Adicionar</button>
+</div></div>
+<div id="lista" class="grid gap-3"></div>
+</main>
+<dialog id="modalAdd" class="backdrop:bg-slate-950/70 p-0 rounded-2xl border border-slate-800 w-full max-w-lg">
+<form method="dialog" class="bg-slate-900 p-5">
+<h2 class="text-lg font-semibold mb-4 text-slate-100">Adicionar item</h2>
+<div class="grid gap-3" id="camposAdd">
+<input id="fCodigo" placeholder="Código" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500">
+<input id="fDescricao" placeholder="Descrição" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500">
+<input id="fSetor" placeholder="Setor" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500">
+<input id="fObservacao" placeholder="Observação" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500">
+<input id="fTermos" placeholder="Termos de busca" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500">
+</div><div class="mt-5 flex justify-end gap-2">
+<button class="px-4 py-2 rounded-xl bg-slate-800 text-slate-100">Cancelar</button>
+<button id="salvarAdd" class="px-4 py-2 rounded-xl bg-sky-500 text-slate-950">Salvar</button>
+</div></form></dialog>
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycby5yASn1YT6W4V6g2aDycz3Qi_MahXIIj3nDKFdbwLChnaMPjkLkE6TfT-lMLgY7SA/exec"
+const STORAGE_KEY = "avenorte-cache-v1"
+const el = sel => document.querySelector(sel)
+const lista = el('#lista'), q = el('#q'), setor = el('#setor'), statusEl = el('#status')
+let abaAtual = 'dados' // dados = Peças, ccm = CCM
+let dados = [], dadosFiltrados = []
 
-    <div class="acoes">
-      <span id="contador" style="color:#71767b;"></span>
-      <div>
-        <button class="btn-buscar" onclick="buscar()">Buscar</button>
-        <button class="btn-adicionar">Adicionar</button>
-      </div>
-    </div>
+function salvarCache(arr){ localStorage.setItem(STORAGE_KEY + '-' + abaAtual, JSON.stringify(arr)) }
+function carregarCache(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY + '-' + abaAtual)||'[]') }catch{ return [] } }
 
-    <div id="resultados"></div>
-  </div>
+async function carregarDados(){
+statusEl.textContent = 'Carregando...'
+statusEl.className = 'text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-300'
+try{
+const r = await fetch(`${API_URL}?aba=${abaAtual}`)
+const j = await r.json()
+dados = j.itens || j
+salvarCache(dados)
+montarSetores()
+aplicarFiltro()
+statusEl.textContent = 'Online'
+statusEl.className = 'text-xs px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+}catch(e){
+statusEl.textContent = 'Offline'
+statusEl.className = 'text-xs px-2 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30'
+dados = carregarCache()
+montarSetores()
+aplicarFiltro()
+}}
 
-  <script>
-    const URL_API = 'COLE_SUA_URL_DO_APPS_SCRIPT_AQUI';
-    let abaAtual = 'dados';
-    let dadosCompletos = [];
+function montarSetores(){
+const campo = abaAtual === 'ccm'? 'porta' : 'setor'
+el('#labelFiltro').textContent = abaAtual === 'ccm'? 'Filtrar por porta' : 'Filtrar por setor'
+const setores = [...new Set(dados.map(x=>x[campo]).filter(Boolean))].sort()
+setor.innerHTML = '<option value="">Todos</option>' + setores.map(s=>`<option>${s}</option>`).join('')
+}
 
-    async function carregarDados() {
-      document.getElementById('resultados').innerHTML = '<p style="text-align:center;color:#71767b;">Carregando...</p>';
-      const resposta = await fetch(`${URL_API}?aba=${abaAtual}`);
-      dadosCompletos = await resposta.json();
-      atualizarFiltroSetor();
-      buscar();
-    }
+function aplicarFiltro(){
+const termo = q.value.toLowerCase().trim()
+const s = setor.value
+const campoSetor = abaAtual === 'ccm'? 'porta' : 'setor'
+dadosFiltrados = dados.filter(item=>{
+const okSetor =!s || item[campoSetor] === s
+const texto = `${item.codigo || item.tag} ${item.descricao || item.nome} ${item.setor || item.porta} ${item.observacao} ${item.termos_busca}`.toLowerCase()
+const okBusca =!termo || texto.includes(termo)
+return okSetor && okBusca
+})
+render()
+}
 
-    function trocarAba(nomeAba) {
-      abaAtual = nomeAba;
-      document.getElementById('btnPecas').classList.toggle('ativo', nomeAba === 'dados');
-      document.getElementById('btnCCM').classList.toggle('ativo', nomeAba === 'ccm');
-      document.getElementById('busca').value = '';
-      carregarDados();
-    }
+function render(){
+el('#contagem').textContent = dadosFiltrados.length
+lista.innerHTML = dadosFiltrados.map(item=>{
+let statusHTML = ''
+if (abaAtual === 'ccm') {
+  const ativa = item.ativa? String(item.ativa).toUpperCase() : ''
+  if (ativa === 'SIM') statusHTML = '<span class="px-2 py-1 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/30 text-xs">ATIVA</span>'
+  else if (ativa === 'NÃO' || ativa === 'NAO') statusHTML = '<span class="px-2 py-1 rounded-full bg-red-500/10 text-red-300 border border-red-500/30 text-xs">INATIVA</span>'
+  else statusHTML = '<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-400 text-xs">A VERIFICAR</span>'
+}
 
-    function atualizarFiltroSetor() {
-      const select = document.getElementById('filtroSetor');
-      const campoSetor = abaAtual === 'ccm'? 'porta' : 'setor';
-      const setores = [...new Set(dadosCompletos.map(item => item[campoSetor]).filter(Boolean))];
-      select.innerHTML = '<option value="">Todos</option>' +
-        setores.map(s => `<option value="${s}">${s}</option>`).join('');
-    }
+const codigo = item.codigo || item.tag || '-'
+const desc = item.descricao || item.nome || ''
+const setorVal = item.setor || item.porta || 'Sem setor'
 
-    function buscar() {
-      const termo = document.getElementById('busca').value.toLowerCase();
-      const setorFiltro = document.getElementById('filtroSetor').value;
-      const divResultados = document.getElementById('resultados');
-      const campoSetor = abaAtual === 'ccm'? 'porta' : 'setor';
+return `
+<div class="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+<div class="flex items-start justify-between gap-3"><div>
+<div class="text-lg font-semibold text-slate-100">${codigo} ${statusHTML}</div>
+<div class="text-slate-300">${desc}</div>
+<div class="mt-2 flex gap-2 text-xs">
+<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${setorVal}</span>
+${item.observacao?`<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${item.observacao}</span>`:''}
+</div></div></div></div>
+`}).join('') || `<div class="text-center text-slate-500 py-10">Nenhum resultado</div>`
+}
 
-      let filtrados = dadosCompletos.filter(item => {
-        const matchTermo = Object.values(item).some(val => String(val).toLowerCase().includes(termo));
-        const matchSetor =!setorFiltro || item[campoSetor] === setorFiltro;
-        return matchTermo && matchSetor;
-      });
+function trocarAba(novaAba) {
+  abaAtual = novaAba
+  el('#abaPecas').className = novaAba === 'dados'?
+    'flex-1 px-4 py-2.5 rounded-xl bg-sky-500 text-slate-950 font-semibold' :
+    'flex-1 px-4 py-2.5 rounded-xl bg-transparent text-slate-300 hover:bg-slate-800'
+  el('#abaCCM').className = novaAba === 'ccm'?
+    'flex-1 px-4 py-2.5 rounded-xl bg-sky-500 text-slate-950 font-semibold' :
+    'flex-1 px-4 py-2.5 rounded-xl bg-transparent text-slate-300 hover:bg-slate-800'
+  q.value = ''
+  setor.value = ''
+  carregarDados()
+}
 
-      document.getElementById('contador').textContent = `${filtrados.length} resultados`;
-      divResultados.innerHTML = '';
+async function adicionarItem(obj){
+statusEl.textContent = 'Salvando...'
+try{
+const r = await fetch(`${API_URL}?aba=${abaAtual}`, {method:'POST', body:JSON.stringify(obj)})
+const res = await r.json()
+if(res.ok){
+await carregarDados()
+alert('Item adicionado com sucesso!')
+return true
+} else {
+alert('Erro: ' + (res.erro || 'Não foi possível salvar'))
+statusEl.textContent = 'Online'
+return false
+}
+}catch(e){
+alert('Erro de conexão. Verifique o Apps Script.')
+statusEl.textContent = 'Online'
+return false
+}
+}
 
-      filtrados.slice(0, 100).forEach(item => {
-        let statusHTML = '';
-        if (abaAtual === 'ccm') {
-          const ativa = item.ativa? String(item.ativa).toUpperCase() : '';
-          if (ativa === 'SIM') statusHTML = '<span class="status-ccm status-sim">ATIVA</span>';
-          else if (ativa === 'NÃO' || ativa === 'NAO') statusHTML = '<span class="status-ccm status-nao">INATIVA</span>';
-          else statusHTML = '<span class="status-ccm status-vazio">A VERIFICAR</span>';
-        }
-
-        const setorTag = item[campoSetor]? `<div class="tag">${item[campoSetor]}</div>` : '<div class="tag">Sem setor</div>';
-
-        divResultados.innerHTML += `
-          <div class="card">
-            <strong>${item.tag || item.codigo}</strong> ${statusHTML}
-            <p>${item.nome || item.descricao || ''}</p>
-            ${setorTag}
-          </div>
-        `;
-      });
-    }
-
-    carregarDados();
-  </script>
+el('#abaPecas').onclick = () => trocarAba('dados')
+el('#abaCCM').onclick = () => trocarAba('ccm')
+el('#btnBuscar').onclick = aplicarFiltro
+el('#btnAtualizar').onclick = carregarDados
+el('#btnAdicionar').onclick = ()=> el('#modalAdd').showModal()
+el('#salvarAdd').onclick = async (e)=>{
+e.preventDefault()
+const obj = {
+  codigo: el('#fCodigo').value.trim(),
+  descricao: el('#fDescricao').value.trim(),
+  setor: el('#fSetor').value.trim(),
+  observacao: el('#fObservacao').value.trim(),
+  termos_busca: el('#fTermos').value.trim()
+}
+if(abaAtual === 'ccm') {
+  obj.tag = obj.codigo
+  obj.nome = obj.descricao
+  obj.porta = obj.setor
+  delete obj.codigo
+  delete obj.descricao
+  delete obj.setor
+}
+if(!obj.codigo &&!obj.tag) return alert('Código/Tag obrigatório')
+const existe = dados.find(item => String(item.codigo || item.tag) === String(obj.codigo || obj.tag))
+if(existe) return alert('Código já existe: ' + (obj.codigo || obj.tag))
+const salvou = await adicionarItem(obj)
+if(salvou){
+el('#modalAdd').close()
+el('#modalAdd form').reset()
+}
+}
+q.oninput = aplicarFiltro
+setor.onchange = aplicarFiltro
+carregarDados()
+</script>
 </body>
 </html>
