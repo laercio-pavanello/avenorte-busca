@@ -89,6 +89,7 @@ function atualizarLabels() {
   el('#fCodigo').placeholder = isCCM? 'Tag' : 'Código'
   el('#fDescricao').placeholder = isCCM? 'Nome' : 'Descrição'
   el('#fSetor').placeholder = isCCM? 'Porta' : 'Setor'
+  el('#fObservacao').placeholder = isCCM? 'Ativa - SIM ou NÃO' : 'Observação'
   el('#tituloModal').textContent = isCCM? 'Adicionar tag CCM' : 'Adicionar peça'
   q.placeholder = isCCM? 'Tag, nome, porta...' : 'Código, descrição, setor...'
 }
@@ -106,7 +107,7 @@ const s = setor.value
 const campoSetor = abaAtual === 'ccm'? 'porta' : 'setor'
 dadosFiltrados = dados.filter(item=>{
 const okSetor =!s || item[campoSetor] === s
-const texto = `${item.codigo || item.tag} ${item.descricao || item.nome} ${item.setor || item.porta} ${item.observacao} ${item.termos_busca}`.toLowerCase()
+const texto = `${item.codigo || item.tag} ${item.descricao || item.nome} ${item.setor || item.porta} ${item.observacao} ${item.ativa} ${item.termos_busca}`.toLowerCase()
 const okBusca =!termo || texto.includes(termo)
 return okSetor && okBusca
 })
@@ -135,7 +136,7 @@ return `
 <div class="text-slate-300">${desc}</div>
 <div class="mt-2 flex gap-2 text-xs">
 <span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${setorVal}</span>
-${item.observacao?`<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${item.observacao}</span>`:''}
+${item.observacao && abaAtual!== 'ccm'?`<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${item.observacao}</span>`:''}
 </div></div></div></div>
 `}).join('') || `<div class="text-center text-slate-500 py-10">Nenhum resultado</div>`
 }
@@ -179,7 +180,7 @@ el('#abaCCM').onclick = () => trocarAba('ccm')
 el('#btnBuscar').onclick = aplicarFiltro
 el('#btnAtualizar').onclick = carregarDados
 el('#btnAdicionar').onclick = ()=> {
-  atualizarLabels() // AGORA ATUALIZA AO ABRIR
+  atualizarLabels()
   el('#modalAdd').showModal()
 }
 el('#salvarAdd').onclick = async (e)=>{
@@ -195,9 +196,11 @@ if(abaAtual === 'ccm') {
   obj.tag = obj.codigo
   obj.nome = obj.descricao
   obj.porta = obj.setor
+  obj.ativa = obj.observacao
   delete obj.codigo
   delete obj.descricao
   delete obj.setor
+  delete obj.observacao
 }
 if(!obj.codigo &&!obj.tag) return alert('Código/Tag obrigatório')
 const existe = dados.find(item => String(item.codigo || item.tag) === String(obj.codigo || obj.tag))
