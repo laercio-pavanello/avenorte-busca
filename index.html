@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR" class="dark">
 <head>
 <meta charset="utf-8">
@@ -41,7 +41,7 @@
 </main>
 <dialog id="modalAdd" class="backdrop:bg-slate-950/70 p-0 rounded-2xl border border-slate-800 w-full max-w-lg">
 <form method="dialog" class="bg-slate-900 p-5">
-<h2 class="text-lg font-semibold mb-4 text-slate-100">Adicionar item</h2>
+<h2 class="text-lg font-semibold mb-4 text-slate-100" id="tituloModal">Adicionar item</h2>
 <div class="grid gap-3" id="camposAdd">
 <input id="fCodigo" placeholder="Código" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500">
 <input id="fDescricao" placeholder="Descrição" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500">
@@ -83,11 +83,19 @@ montarSetores()
 aplicarFiltro()
 }}
 
+function atualizarLabels() {
+  const isCCM = abaAtual === 'ccm'
+  el('#labelFiltro').textContent = isCCM? 'Filtrar por porta' : 'Filtrar por setor'
+  el('#fCodigo').placeholder = isCCM? 'Tag' : 'Código'
+  el('#fDescricao').placeholder = isCCM? 'Nome' : 'Descrição'
+  el('#fSetor').placeholder = isCCM? 'Porta' : 'Setor'
+  el('#tituloModal').textContent = isCCM? 'Adicionar tag CCM' : 'Adicionar peça'
+  q.placeholder = isCCM? 'Tag, nome, porta...' : 'Código, descrição, setor...'
+}
+
 function montarSetores(){
 const campo = abaAtual === 'ccm'? 'porta' : 'setor'
-el('#labelFiltro').textContent = abaAtual === 'ccm'? 'Filtrar por porta' : 'Filtrar por setor'
-el('#fSetor').placeholder = abaAtual === 'ccm'? 'Porta' : 'Setor'
-q.placeholder = abaAtual === 'ccm'? 'Tag, nome, porta...' : 'Código, descrição, setor...'
+atualizarLabels()
 const setores = [...new Set(dados.map(x=>x[campo]).filter(Boolean))].sort()
 setor.innerHTML = '<option value="">Todos</option>' + setores.map(s=>`<option>${s}</option>`).join('')
 }
@@ -170,7 +178,10 @@ el('#abaPecas').onclick = () => trocarAba('dados')
 el('#abaCCM').onclick = () => trocarAba('ccm')
 el('#btnBuscar').onclick = aplicarFiltro
 el('#btnAtualizar').onclick = carregarDados
-el('#btnAdicionar').onclick = ()=> el('#modalAdd').showModal()
+el('#btnAdicionar').onclick = ()=> {
+  atualizarLabels() // AGORA ATUALIZA AO ABRIR
+  el('#modalAdd').showModal()
+}
 el('#salvarAdd').onclick = async (e)=>{
 e.preventDefault()
 const obj = {
