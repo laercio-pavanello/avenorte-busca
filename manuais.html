@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal dos Manuais - Busca Industrial</title>
+  <meta name="theme-color" content="#0f172a">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'] } } } }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    * { -webkit-tap-highlight-color: transparent; }
+    .scrollbar-thin::-webkit-scrollbar { height: 6px; width: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  </style>
+  <!--
+    PORTAL DOS MANUAIS - INSTRUÇÕES GOOGLE SHEETS
+    1. Publique cada aba como CSV: Arquivo > Compartilhar > Publicar na Web > formato CSV
+    2. Copie a URL gerada para cada aba (Falhas, Parâmetros, Entradas)
+    3. No código abaixo, substitua as constantes SHEET_URL_FALHAS, SHEET_URL_PARAMETROS, SHEET_URL_ENTRADAS
+    4. O site vai buscar automaticamente via fetch. Se deixar vazio, usa dados de exemplo.
+  -->
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+  <!-- Header -->
+  <header class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white sticky top-0 z-40 border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="py-6 sm:py-8 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center ring-1 ring-white/20 shrink-0">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 0 0 1 6.5 2z"/>
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Portal dos Manuais</h1>
+          <p class="text-slate-300 text-sm sm:text-base mt-0.5">Busca rápida de falhas, parâmetros e entradas digitais</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-20">
+    <!-- Card Instruções -->
+    <section class="mb-6">
+      <div class="bg-white rounded-3xl shadow-sm ring-1 ring-slate-200 p-5 sm:p-7">
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-blue-600/10 text-blue-700 flex items-center justify-center shrink-0">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+            </svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h2 class="font-semibold text-lg text-slate-900">Como conectar ao Google Sheets</h2>
+            <ol class="mt-3 space-y-2 text-sm text-slate-600 list-decimal list-inside">
+              <li>Publique cada aba como CSV: <span class="font-medium">Arquivo &gt; Compartilhar &gt; Publicar na Web &gt; formato CSV</span></li>
+              <li>Copie a URL de cada publicação</li>
+              <li>No código, substitua as constantes abaixo</li>
+              <li>O site vai buscar via <code class="px-1.5 py-0.5 bg-slate-100 rounded">fetch</code> automaticamente</li>
+            </ol>
+            <div class="mt-4 grid sm:grid-cols-3 gap-2">
+              <div class="bg-slate-950 text-slate-100 rounded-xl p-3 font-mono text-xs overflow-x-auto">SHEET_URL_FALHAS = ""</div>
+              <div class="bg-slate-950 text-slate-100 rounded-xl p-3 font-mono text-xs overflow-x-auto">SHEET_URL_PARAMETROS = ""</div>
+              <div class="bg-slate-950 text-slate-100 rounded-xl p-3 font-mono text-xs overflow-x-auto">SHEET_URL_ENTRADAS = ""</div>
+            </div>
+            <p id="status-dados" class="mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 inline-flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+              Usando dados de exemplo locais
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabs -->
+    <div class="flex items-center justify-between mb-4">
+      <nav class="bg-slate-200/70 p-1 rounded-2xl inline-flex w-full sm:w-auto gap-1">
+        <button data-tab="falhas" class="tab-btn active flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm font-medium transition flex items-center justify-center gap-2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/></svg>
+          Falhas
+        </button>
+        <button data-tab="parametros" class="tab-btn flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm font-medium transition flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+          Parâmetros
+        </button>
+        <button data-tab="entradas" class="tab-btn flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm font-medium transition flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg>
+          Entradas Digitais
+        </button>
+      </nav>
+      <div class="hidden sm:flex items-center gap-2 text-xs text-slate-500">
+        <span id="ultima-atualizacao"></span>
+      </div>
+    </div>
+
+    <!-- Conteúdo das Abas -->
+    <div class="bg-white rounded-3xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
+      <!-- ABA FALHAS -->
+      <section id="tab-falhas" class="tab-panel p-4 sm:p-6">
+        <div class="flex flex-col lg:flex-row gap-3 mb-5">
+          <div class="relative flex-1">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3"/></svg>
+            <input id="busca-falhas" type="search" placeholder="Buscar por código, descrição, causa..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm">
+          </div>
+          <select id="filtro-maquina-falhas" class="px-3 py-2.5 rounded-xl border border-slate-300 text-sm bg-white min-w-[180px]"></select>
+          <button id="limpar-falhas" class="px-4 py-2.5 rounded-xl border border-slate-300 text-sm hover:bg-slate-50">Limpar</button>
+        </div>
+
+        <!-- Desktop Table -->
+        <div class="hidden md:block overflow-x-auto scrollbar-thin">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-y border-slate-200">
+              <tr class="text-left text-slate-600">
+                <th class="px-4 py-3 font-semibold">Código</th>
+                <th class="px-4 py-3 font-semibold">Máquina</th>
+                <th class="px-4 py-3 font-semibold">Descrição</th>
+                <th class="px-4 py-3 font-semibold">Causa Provável</th>
+                <th class="px-4 py-3 font-semibold">Solução</th>
+                <th class="px-4 py-3 font-semibold">Manual</th>
+                <th class="px-4 py-3 font-semibold">Severidade</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-falhas" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+        <!-- Mobile Cards -->
+        <div id="cards-falhas" class="md:hidden space-y-3"></div>
+        <div id="vazio-falhas" class="hidden text-center py-12 text-slate-500">
+          <p class="font-medium">Nenhuma falha encontrada</p>
+          <p class="text-sm mt-1">Ajuste os filtros de busca</p>
+        </div>
+      </section>
+
+      <!-- ABA PARAMETROS -->
+      <section id="tab-parametros" class="tab-panel hidden p-4 sm:p-6">
+        <div class="flex flex-col lg:flex-row gap-3 mb-5">
+          <div class="relative flex-1">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="busca-parametros" type="search" placeholder="Buscar por ID, nome, descrição..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm">
+          </div>
+          <select id="filtro-maquina-parametros" class="px-3 py-2.5 rounded-xl border border-slate-300 text-sm bg-white min-w-[180px]"></select>
+          <button id="limpar-parametros" class="px-4 py-2.5 rounded-xl border border-slate-300 text-sm hover:bg-slate-50">Limpar</button>
+        </div>
+
+        <div class="hidden md:block overflow-x-auto scrollbar-thin">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-y border-slate-200">
+              <tr class="text-left text-slate-600">
+                <th class="px-4 py-3 font-semibold">ID</th>
+                <th class="px-4 py-3 font-semibold">Nome</th>
+                <th class="px-4 py-3 font-semibold">Faixa</th>
+                <th class="px-4 py-3 font-semibold">Default</th>
+                <th class="px-4 py-3 font-semibold">Unid.</th>
+                <th class="px-4 py-3 font-semibold">Descrição</th>
+                <th class="px-4 py-3 font-semibold">Máquina</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-parametros" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+        <div id="cards-parametros" class="md:hidden space-y-3"></div>
+        <div id="vazio-parametros" class="hidden text-center py-12 text-slate-500">
+          <p class="font-medium">Nenhum parâmetro encontrado</p>
+        </div>
+      </section>
+
+      <!-- ABA ENTRADAS -->
+      <section id="tab-entradas" class="tab-panel hidden p-4 sm:p-6">
+        <div class="flex flex-col lg:flex-row gap-3 mb-5">
+          <div class="relative flex-1">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="busca-entradas" type="search" placeholder="Buscar por endereço, nome, função..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm">
+          </div>
+          <select id="filtro-maquina-entradas" class="px-3 py-2.5 rounded-xl border border-slate-300 text-sm bg-white min-w-[180px]"></select>
+          <button id="limpar-entradas" class="px-4 py-2.5 rounded-xl border border-slate-300 text-sm hover:bg-slate-50">Limpar</button>
+        </div>
+
+        <div class="hidden md:block overflow-x-auto scrollbar-thin">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-y border-slate-200">
+              <tr class="text-left text-slate-600">
+                <th class="px-4 py-3 font-semibold">Endereço</th>
+                <th class="px-4 py-3 font-semibold">Nome</th>
+                <th class="px-4 py-3 font-semibold">Tipo</th>
+                <th class="px-4 py-3 font-semibold">Função</th>
+                <th class="px-4 py-3 font-semibold">Estado Normal</th>
+                <th class="px-4 py-3 font-semibold">Máquina</th>
+                <th class="px-4 py-3 font-semibold">Observação</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-entradas" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+        <div id="cards-entradas" class="md:hidden space-y-3"></div>
+        <div id="vazio-entradas" class="hidden text-center py-12 text-slate-500">
+          <p class="font-medium">Nenhuma entrada encontrada</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-200 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div class="grid md:grid-cols-2 gap-8">
+        <div>
+          <h3 class="font-semibold text-slate-900 flex items-center gap-2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.333-1.754-1.333-1.754-1.089-.745.083-.729.083-.729 1.205.084 1.84 1.236 1.84 1.236 1.07 1.835 2.807 1.305 3.492.998.108-.776.418-1.305.762-1.605-2.665-.305-5.466-1.334-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.62-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
+            Publicar no GitHub Pages
+          </h3>
+          <ol class="mt-3 text-sm text-slate-600 space-y-1.5 list-decimal list-inside">
+            <li>Crie um repositório: <span class="font-mono bg-slate-100 px-1.5 py-0.5 rounded">portal-manuais</span></li>
+            <li>Envie este arquivo como <span class="font-mono bg-slate-100 px-1.5 py-0.5 rounded">index.html</span></li>
+            <li>Vá em <strong>Settings → Pages</strong> → Deploy from branch → <strong>main</strong> / root</li>
+            <li>Acesse: <span class="font-mono bg-slate-100 px-1.5 py-0.5 rounded">https://seu-usuario.github.io/portal-manuais</span></li>
+          </ol>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-900">Dicas de uso</h3>
+          <ul class="mt-3 text-sm text-slate-600 space-y-1.5">
+            <li>• Use a busca para filtrar em tempo real</li>
+            <li>• Toque no código/ID para copiar</li>
+            <li>• Filtre por máquina para diagnóstico rápido</li>
+            <li>• Mantenha o Google Sheets atualizado — o site reflete em segundos</li>
+          </ul>
+        </div>
+      <p class="text-xs text-slate-400 mt-8">© Portal de Manuais — Uso interno industrial</p>
+    </div>
+  </footer>
+
+  <script>
+    // ===== CONFIGURAÇÃO GOOGLE SHEETS =====
+    const SHEET_URL_FALHAS = '';
+    const SHEET_URL_PARAMETROS = '';
+    const SHEET_URL_ENTRADAS = '';
+
+    // ===== DADOS DE EXEMPLO (exatamente conforme CSVs anteriores) =====
+    const dadosExemplo = {
+      falhas: [
+        {codigo:'E01', maquina:'Envasadora 1', descricao:'Sobrecarga motor principal', causa_provavel:'Travamento mecânico / corrente alta', solucao:'Verificar correia, desacoplar carga, resetar inversor', pagina_manual:'45', severidade:'Alta'},
+        {codigo:'E02', maquina:'Envasadora 1', descricao:'Sensor de garrafa não detecta', causa_provavel:'Sensor sujo ou desalinhado', solucao:'Limpar lente, ajustar distância 5mm, testar com peça', pagina_manual:'52', severidade:'Média'},
+        {codigo:'F15', maquina:'Seladora 3', descricao:'Temperatura baixa zona 1', causa_provavel:'Resistência aberta', solucao:'Medir resistência, substituir cartucho, verificar SSR', pagina_manual:'78', severidade:'Alta'},
+        {codigo:'E07', maquina:'Esteira 2', descricao:'Emergência acionada', causa_provavel:'Botão pressionado ou cabo rompido', solucao:'Liberar emergência, verificar continuidade circuito', pagina_manual:'22', severidade:'Alta'},
+        {codigo:'W03', maquina:'Rotuladora 5', descricao:'Falta de etiqueta', causa_provavel:'Bobina terminando', solucao:'Trocar bobina, ajustar sensor de fim', pagina_manual:'61', severidade:'Baixa'},
+        {codigo:'E11', maquina:'Seladora 3', descricao:'Falha comunicação CLP', causa_provavel:'Cabo Ethernet solto', solucao:'Verificar conector X1, reiniciar CLP', pagina_manual:'112', severidade:'Média'},
+        {codigo:'E04', maquina:'Envasadora 1', descricao:'Válvula dosadora travada', causa_provavel:'Produto cristalizado', solucao:'Realizar CIP, lubrificar haste', pagina_manual:'67', severidade:'Média'},
+      ],
+      parametros: [
+        {id:'P100', nome:'Velocidade Envasadora', faixa_min:'0', faixa_max:'1200', default:'850', unidade:'gpm', descricao:'Velocidade nominal de produção', maquina:'Envasadora 1'},
+        {id:'P101', nome:'Tempo de Dosagem', faixa_min:'0.5', faixa_max:'5.0', default:'2.2', unidade:'s', descricao:'Tempo de abertura da válvula', maquina:'Envasadora 1'},
+        {id:'DB1.DBW0', nome:'Setpoint Temperatura Z1', faixa_min:'150', faixa_max:'220', default:'185', unidade:'°C', descricao:'Temperatura selagem zona 1', maquina:'Seladora 3'},
+        {id:'P205', nome:'Atraso Esteira', faixa_min:'0', faixa_max:'10', default:'1.5', unidade:'s', descricao:'Delay partida após sensor', maquina:'Esteira 2'},
+        {id:'P310', nome:'Pressão Ar Selagem', faixa_min:'4', faixa_max:'6', default:'5.5', unidade:'bar', descricao:'Pressão pneumática', maquina:'Seladora 3'},
+        {id:'P150', nome:'Torque Tampa', faixa_min:'10', faixa_max:'25', default:'18', unidade:'Ncm', descricao:'Torque aplicador de tampas', maquina:'Rotuladora 5'},
+      ],
+      entradas: [
+        {endereco:'I0.0', nome:'Emergência Geral', tipo:'Digital', funcao:'Segurança', estado_normal:'Fechado (1)', maquina:'Envasadora 1', observacao:'NC em série'},
+        {endereco:'I0.1', nome:'Sensor Garrafa Entrada', tipo:'PNP', funcao:'Detecção', estado_normal:'Aberto (0)', maquina:'Envasadora 1', observacao:'Ajustar 5mm'},
+        {endereco:'DI1', nome:'Confirmação Temperatura OK', tipo:'Digital', funcao:'Interlock', estado_normal:'Fechado (1)', maquina:'Seladora 3', observacao:'Do controlador Novus'},
+        {endereco:'I1.3', nome:'Porta Proteção', tipo:'Segurança', funcao:'Segurança', estado_normal:'Fechado (1)', maquina:'Esteira 2', observacao:'Chave magnética'},
+        {endereco:'I2.0', nome:'Fotocélula Etiqueta', tipo:'NPN', funcao:'Contagem', estado_normal:'Pulsado', maquina:'Rotuladora 5', observacao:'Marcação transparente'},
+        {endereco:'I0.5', nome:'Sensor Nível Tanque', tipo:'Digital', funcao:'Processo', estado_normal:'Fechado (1)', maquina:'Envasadora 1', observacao:'Boia inox'},
+      ]
+    };
+
+    let DATA = { falhas: [], parametros: [], entradas: [] };
+
+    // Utilidades
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => document.querySelectorAll(sel);
+    const norm = s => (s||'').toString().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,'');
+    const copiar = async (texto) => {
+      try { await navigator.clipboard.writeText(texto); toast('Copiado: ' + texto); } catch {}
+    };
+    const toast = (msg) => {
+      const t = document.createElement('div');
+      t.textContent = msg;
+      t.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-4 py-2 rounded-xl text-sm shadow-lg z-50';
+      document.body.appendChild(t);
+      setTimeout(()=> t.remove(), 1800);
+    };
+    const badgeSev = (s) => {
+      const sev = (s||'').trim();
+      const map = {
+        'Alta': 'bg-red-50 text-red-700 ring-red-200',
+        'Média': 'bg-amber-50 text-amber-700 ring-amber-200',
+        'Media': 'bg-amber-50 text-amber-700 ring-amber-200',
+        'Baixa': 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+      };
+      return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ring-1 ring-inset ${map[sev]||'bg-slate-50 text-slate-700 ring-slate-200'}">${sev}</span>`;
+    };
+
+    // Tabs
+    $$('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        $$('.tab-btn').forEach(b => b.classList.remove('active','bg-white','shadow-sm','text-slate-900'));
+        $$('.tab-btn').forEach(b => b.classList.add('text-slate-600'));
+        btn.classList.add('active','bg-white','shadow-sm','text-slate-900');
+        btn.classList.remove('text-slate-600');
+        $$('.tab-panel').forEach(p => p.classList.add('hidden'));
+        $('#tab-' + btn.dataset.tab).classList.remove('hidden');
+      });
+    });
+    // Ativa estilo inicial
+    document.querySelector('.tab-btn.active').classList.add('bg-white','shadow-sm','text-slate-900');
+
+    // Fetch CSV
+    async function fetchCSV(url) {
+      const res = await fetch(url, {cache:'no-store'});
+      if(!res.ok) throw new Error('Falha ao buscar');
+      const text = await res.text();
+      const lines = text.split(/\r?\n/).filter(l=>l.trim());
+      const headers = lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
+      return lines.slice(1).map(line => {
+        const cells = [];
+        let cur = '', inQ = false;
+        for(let i=0;i<line.length;i++){
+          const ch = line[i];
+          if(ch === '"'){ inQ = !inQ; continue; }
+          if(ch === ',' && !inQ){ cells.push(cur); cur=''; } else cur+=ch;
+        }
+        cells.push(cur);
+        const obj = {};
+        headers.forEach((h,i)=> obj[h] = (cells[i]||'').trim());
+        return obj;
+      });
+    }
+
+    async function carregarDados(){
+      let usandoExemplo = true;
+      try {
+        const [f,p,e] = await Promise.all([
+          SHEET_URL_FALHAS ? fetchCSV(SHEET_URL_FALHAS) : Promise.resolve(dadosExemplo.falhas),
+          SHEET_URL_PARAMETROS ? fetchCSV(SHEET_URL_PARAMETROS) : Promise.resolve(dadosExemplo.parametros),
+          SHEET_URL_ENTRADAS ? fetchCSV(SHEET_URL_ENTRADAS) : Promise.resolve(dadosExemplo.entradas),
+        ]);
+        DATA.falhas = f; DATA.parametros = p; DATA.entradas = e;
+        usandoExemplo = !(SHEET_URL_FALHAS || SHEET_URL_PARAMETROS || SHEET_URL_ENTRADAS);
+      } catch(err){
+        console.error(err);
+        DATA = JSON.parse(JSON.stringify(dadosExemplo));
+        usandoExemplo = true;
+        toast('Erro ao carregar Sheets, usando exemplo');
+      }
+      $('#status-dados').innerHTML = usandoExemplo
+        ? '<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Usando dados de exemplo locais'
+        : '<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Conectado ao Google Sheets';
+      $('#status-dados').className = 'mt-3 text-xs ' + (usandoExemplo ? 'text-amber-700 bg-amber-50 border border-amber-200' : 'text-emerald-700 bg-emerald-50 border border-emerald-200') + ' rounded-lg px-3 py-2 inline-flex items-center gap-2';
+      $('#ultima-atualizacao').textContent = 'Atualizado ' + new Date().toLocaleString('pt-BR');
+      popularFiltros();
+      renderAll();
+    }
+
+    function popularFiltros(){
+      const pop = (sel, items) => {
+        const el = $(sel);
+        const maquinas = [...new Set(items.map(i=>i.maquina).filter(Boolean))].sort();
+        el.innerHTML = '<option value="">Todas as máquinas</option>' + maquinas.map(m=>`<option>${m}</option>`).join('');
+      };
+      pop('#filtro-maquina-falhas', DATA.falhas);
+      pop('#filtro-maquina-parametros', DATA.parametros);
+      pop('#filtro-maquina-entradas', DATA.entradas);
+    }
+
+    // Render Falhas
+    function renderFalhas(){
+      const q = norm($('#busca-falhas').value);
+      const mq = $('#filtro-maquina-falhas').value;
+      const lista = DATA.falhas.filter(f => {
+        const okM = !mq || f.maquina === mq;
+        const texto = norm(Object.values(f).join(' '));
+        const okQ = !q || texto.includes(q);
+        return okM && okQ;
+      });
+
+      // Desktop
+      $('#tbody-falhas').innerHTML = lista.map(f => `
+        <tr class="hover:bg-slate-50">
+          <td class="px-4 py-3"><button onclick="copiar('${f.codigo}')" class="font-mono text-blue-700 hover:underline">${f.codigo}</button></td>
+          <td class="px-4 py-3">${f.maquina}</td>
+          <td class="px-4 py-3">${f.descricao}</td>
+          <td class="px-4 py-3 text-slate-600 max-w-[220px]">${f.causa_provavel}</td>
+          <td class="px-4 py-3 text-slate-600 max-w-[240px]">${f.solucao}</td>
+          <td class="px-4 py-3 text-center">${f.pagina_manual}</td>
+          <td class="px-4 py-3">${badgeSev(f.severidade)}</td>
+        </tr>
+      `).join('');
+
+      // Mobile
+      $('#cards-falhas').innerHTML = lista.map(f => `
+        <div class="border border-slate-200 rounded-2xl p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <button onclick="copiar('${f.codigo}')" class="font-mono text-base font-semibold text-blue-700">${f.codigo}</button>
+              <p class="text-sm text-slate-900 mt-0.5">${f.descricao}</p>
+              <p class="text-xs text-slate-500 mt-1">${f.maquina} • pág. ${f.pagina_manual}</p>
+            </div>
+            ${badgeSev(f.severidade)}
+          </div>
+          <div class="mt-3 grid grid-cols-1 gap-2 text-sm">
+            <div class="bg-slate-50 rounded-xl p-3">
+              <p class="text-[11px] uppercase tracking-wide text-slate-500 font-medium">Causa provável</p>
+              <p class="text-slate-800">${f.causa_provavel}</p>
+            </div>
+            <div class="bg-slate-50 rounded-xl p-3">
+              <p class="text-[11px] uppercase tracking-wide text-slate-500 font-medium">Solução</p>
+              <p class="text-slate-800">${f.solucao}</p>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      $('#vazio-falhas').classList.toggle('hidden', lista.length>0);
+    }
+
+    // Render Parâmetros
+    function renderParametros(){
+      const q = norm($('#busca-parametros').value);
+      const mq = $('#filtro-maquina-parametros').value;
+      const lista = DATA.parametros.filter(p => {
+        const okM = !mq || p.maquina === mq;
+        const texto = norm(Object.values(p).join(' '));
+        return okM && (!q || texto.includes(q));
+      });
+
+      $('#tbody-parametros').innerHTML = lista.map(p => `
+        <tr class="hover:bg-slate-50">
+          <td class="px-4 py-3"><button onclick="copiar('${p.id}')" class="font-mono text-blue-700 hover:underline">${p.id}</button></td>
+          <td class="px-4 py-3 font-medium">${p.nome}</td>
+          <td class="px-4 py-3 font-mono text-xs">${p.faixa_min} … ${p.faixa_max}</td>
+          <td class="px-4 py-3 font-mono">${p.default}</td>
+          <td class="px-4 py-3">${p.unidade}</td>
+          <td class="px-4 py-3 text-slate-600">${p.descricao}</td>
+          <td class="px-4 py-3">${p.maquina}</td>
+        </tr>
+      `).join('');
+
+      $('#cards-parametros').innerHTML = lista.map(p => `
+        <div class="border border-slate-200 rounded-2xl p-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <button onclick="copiar('${p.id}')" class="font-mono text-base font-semibold text-blue-700">${p.id}</button>
+              <p class="font-medium text-slate-900">${p.nome}</p>
+              <p class="text-xs text-slate-500">${p.maquina}</p>
+            </div>
+            <span class="text-xs bg-slate-100 px-2 py-1 rounded-lg">${p.unidade}</span>
+          </div>
+          <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+            <div class="bg-slate-50 rounded-xl p-2">
+              <p class="text-[10px] uppercase text-slate-500">Mín</p><p class="font-mono text-sm">${p.faixa_min}</p>
+            </div>
+            <div class="bg-blue-50 rounded-xl p-2 ring-1 ring-blue-100">
+              <p class="text-[10px] uppercase text-blue-700">Default</p><p class="font-mono text-sm font-semibold text-blue-800">${p.default}</p>
+            </div>
+            <div class="bg-slate-50 rounded-xl p-2">
+              <p class="text-[10px] uppercase text-slate-500">Máx</p><p class="font-mono text-sm">${p.faixa_max}</p>
+            </div>
+          <p class="text-sm text-slate-600 mt-3">${p.descricao}</p>
+        </div>
+      `).join('');
+
+      $('#vazio-parametros').classList.toggle('hidden', lista.length>0);
+    }
+
+    // Render Entradas
+    function renderEntradas(){
+      const q = norm($('#busca-entradas').value);
+      const mq = $('#filtro-maquina-entradas').value;
+      const lista = DATA.entradas.filter(e => {
+        const okM = !mq || e.maquina === mq;
+        const texto = norm(Object.values(e).join(' '));
+        return okM && (!q || texto.includes(q));
+      });
+
+      $('#tbody-entradas').innerHTML = lista.map(e => `
+        <tr class="hover:bg-slate-50">
+          <td class="px-4 py-3"><button onclick="copiar('${e.endereco}')" class="font-mono text-blue-700 hover:underline">${e.endereco}</button></td>
+          <td class="px-4 py-3 font-medium">${e.nome}</td>
+          <td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-lg bg-slate-100">${e.tipo}</span></td>
+          <td class="px-4 py-3">${e.funcao}</td>
+          <td class="px-4 py-3 font-mono text-xs">${e.estado_normal}</td>
+          <td class="px-4 py-3">${e.maquina}</td>
+          <td class="px-4 py-3 text-slate-600">${e.observacao||''}</td>
+        </tr>
+      `).join('');
+
+      $('#cards-entradas').innerHTML = lista.map(e => `
+        <div class="border border-slate-200 rounded-2xl p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <button onclick="copiar('${e.endereco}')" class="font-mono text-base font-semibold text-blue-700">${e.endereco}</button>
+              <p class="font-medium text-slate-900">${e.nome}</p>
+              <p class="text-xs text-slate-500">${e.maquina} • ${e.funcao}</p>
+            </div>
+            <span class="text-[11px] px-2 py-1 rounded-lg bg-slate-100 text-slate-700">${e.tipo}</span>
+          </div>
+          <div class="mt-3 flex items-center justify-between text-sm">
+            <div>
+              <p class="text-[11px] uppercase text-slate-500">Estado normal</p>
+              <p class="font-mono">${e.estado_normal}</p>
+            </div>
+            <p class="text-xs text-slate-600 max-w-[60%] text-right">${e.observacao||''}</p>
+          </div>
+        </div>
+      `).join('');
+
+      $('#vazio-entradas').classList.toggle('hidden', lista.length>0);
+    }
+
+    function renderAll(){ renderFalhas(); renderParametros(); renderEntradas(); }
+
+    // Eventos
+    ['busca-falhas','filtro-maquina-falhas'].forEach(id=> $('#'+id).addEventListener('input', renderFalhas));
+    $('#limpar-falhas').onclick = ()=>{ $('#busca-falhas').value=''; $('#filtro-maquina-falhas').value=''; renderFalhas(); };
+
+    ['busca-parametros','filtro-maquina-parametros'].forEach(id=> $('#'+id).addEventListener('input', renderParametros));
+    $('#limpar-parametros').onclick = ()=>{ $('#busca-parametros').value=''; $('#filtro-maquina-parametros').value=''; renderParametros(); };
+
+    ['busca-entradas','filtro-maquina-entradas'].forEach(id=> $('#'+id).addEventListener('input', renderEntradas));
+    $('#limpar-entradas').onclick = ()=>{ $('#busca-entradas').value=''; $('#filtro-maquina-entradas').value=''; renderEntradas(); };
+
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', carregarDados);
+    window.copiar = copiar;
+  </script>
+<script>(function(){document.addEventListener("click",function(e){var a=e.target.closest("[data-product-id]");if(!a)return;e.preventDefault();var pid=a.getAttribute("data-product-id");if(pid)parent.postMessage({type:"ecto-artifact-link-click",productId:pid},"*")})})();</script>
+</body>
+</html>
