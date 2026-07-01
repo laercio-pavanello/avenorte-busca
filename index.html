@@ -87,6 +87,14 @@ const pegar = (obj, ...keys) => {
 function salvarCache(arr){ localStorage.setItem(STORAGE_KEY + '-' + abaAtual, JSON.stringify(arr)) }
 function carregarCache(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY + '-' + abaAtual)||'[]') }catch{ return [] } }
 
+function ehItemCCM(item) {
+  return semAcento(pegar(item, 'setor', 'porta')).startsWith('porta ')
+}
+
+function filtrarAbaAtual(lista) {
+  return lista.filter(item => abaAtual === 'ccm' ? ehItemCCM(item) : !ehItemCCM(item))
+}
+
 function normalizarItem(item) {
   const codigo = pegar(item, 'codigo', 'tag')
   const descricao = pegar(item, 'descricao', 'nome')
@@ -177,9 +185,9 @@ const dadosApi = Array.isArray(j)? j : (j.itens || j.data || [])
 if (abaAtual === 'dados') {
   let dadosCsv = []
   try { dadosCsv = await carregarCsvsPecas() } catch(e) { console.warn(e) }
-  dados = juntarListas(dadosEmbutidos(), dadosCsv, dadosApi)
+  dados = filtrarAbaAtual(juntarListas(dadosEmbutidos(), dadosCsv, dadosApi))
 } else {
-  dados = juntarListas(dadosApi)
+  dados = filtrarAbaAtual(juntarListas(dadosEmbutidos(), dadosApi))
 }
 salvarCache(dados)
 montarSetores()
@@ -192,6 +200,7 @@ statusEl.textContent = 'Offline'
 statusEl.className = 'text-xs px-2 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30'
 dados = carregarCache()
 if (abaAtual === 'dados') dados = juntarListas(dados, dadosEmbutidos())
+dados = filtrarAbaAtual(dados)
 montarSetores()
 aplicarFiltro()
 }}
@@ -201,6 +210,8 @@ statusEl.textContent = 'Dados salvos'
 statusEl.className = 'text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-300'
 dados = carregarCache()
 if (abaAtual === 'dados') dados = juntarListas(dados, dadosEmbutidos())
+else dados = juntarListas(dados, dadosEmbutidos())
+dados = filtrarAbaAtual(dados)
 montarSetores()
 aplicarFiltro()
 }

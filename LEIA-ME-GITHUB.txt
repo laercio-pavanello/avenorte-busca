@@ -1,0 +1,18 @@
+CORRECAO: PECAS E CCM SEPARADOS
+
+Mudanca desta versao:
+- Itens com setor/porta começando com "PORTA" nao aparecem mais na aba Pecas.
+- Esses itens ficam na aba CCM.
+- O pacote offline foi atualizado para v8.
+
+Arquivos principais:
+- index.html
+- service-worker.js
+
+Como publicar:
+1. Envie os arquivos desta pasta na raiz do GitHub.
+2. Aguarde a publicacao.
+3. Teste: https://avenorte-busca.pages.dev/service-worker.js?v=8
+4. Deve aparecer: busca-pecas-avenorte-v8
+
+Depois abra o app e clique em Atualizar uma vez com internet boa.
