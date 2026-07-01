@@ -1,0 +1,295 @@
+:root {
+  --fundo: #eef3f6;
+  --painel: #ffffff;
+  --texto: #1f2933;
+  --muted: #667085;
+  --linha: #d8e0e6;
+  --azul: #176b87;
+  --azul-forte: #0f5168;
+  --verde: #2e7d5b;
+  --vermelho: #b42318;
+  --amarelo: #f6c453;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--texto);
+  background: var(--fundo);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 16px;
+  font-weight: 700;
+  color: var(--azul);
+  background: #e4eef3;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #d5e6ee;
+}
+
+button.principal {
+  color: #fff;
+  background: var(--azul);
+}
+
+button.principal:hover {
+  background: var(--azul-forte);
+}
+
+button.perigo {
+  color: #fff;
+  background: var(--vermelho);
+}
+
+button.perigo:hover {
+  background: #912018;
+}
+
+input {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--linha);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--texto);
+  background: #fff;
+}
+
+input:focus {
+  outline: 3px solid rgba(23, 107, 135, 0.18);
+  border-color: var(--azul);
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: #344054;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.app {
+  width: min(980px, 100%);
+  margin: 0 auto;
+  padding: 18px;
+}
+
+.topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 2px 18px;
+}
+
+.topo h1 {
+  margin: 0;
+  font-size: clamp(28px, 6vw, 44px);
+  line-height: 1;
+}
+
+.etiqueta {
+  margin: 0 0 6px;
+  color: var(--verde);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.status {
+  min-width: 104px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--azul-forte);
+  background: #dcecf2;
+}
+
+.status.offline {
+  color: #7a4f00;
+  background: #fff2c2;
+}
+
+.painel {
+  margin-bottom: 14px;
+  border: 1px solid var(--linha);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--painel);
+}
+
+.linha-busca {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.contador,
+.mensagem {
+  min-height: 20px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.formulario h2 {
+  margin: 0 0 14px;
+  font-size: 18px;
+}
+
+.grade-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.formulario label + label,
+.grade-form + label {
+  margin-top: 12px;
+}
+
+.acoes-form {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.resultados {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 24px;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--linha);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--painel);
+}
+
+.codigo {
+  color: var(--azul);
+  font-size: 18px;
+  font-weight: 800;
+  word-break: break-word;
+}
+
+.descricao {
+  margin-top: 4px;
+  color: var(--texto);
+  line-height: 1.35;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.tag {
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: #344054;
+  background: #edf2f7;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.item-acoes {
+  display: flex;
+  gap: 8px;
+}
+
+.vazio {
+  border: 1px dashed var(--linha);
+  border-radius: 8px;
+  padding: 22px;
+  text-align: center;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+dialog {
+  width: min(420px, calc(100% - 28px));
+  border: 0;
+  border-radius: 8px;
+  padding: 22px;
+  color: var(--texto);
+}
+
+dialog::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+}
+
+dialog h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+dialog p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.dialogo-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+@media (max-width: 640px) {
+  .app {
+    padding: 12px;
+  }
+
+  .topo {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .status {
+    width: 100%;
+  }
+
+  .linha-busca,
+  .grade-form,
+  .item {
+    grid-template-columns: 1fr;
+  }
+
+  .acoes-form,
+  .dialogo-acoes,
+  .item-acoes {
+    flex-direction: column;
+  }
+
+  button {
+    width: 100%;
+  }
+}

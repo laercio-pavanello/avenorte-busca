@@ -1,0 +1,25 @@
+SITE PRONTO PARA GITHUB
+
+Mudanca desta versao:
+- O aplicativo nao atualiza mais sozinho ao abrir.
+- O aplicativo nao atualiza mais sozinho ao trocar entre Pecas e CCM.
+- Ao abrir, ele usa os dados ja salvos no aparelho.
+- A planilha/Internet so e consultada quando clicar no botao Atualizar.
+
+Motivo:
+Em locais onde aparece Wi-Fi, mas sem Internet de verdade, o aplicativo podia tentar atualizar sozinho e ficar lento ou mostrar erro.
+Agora a base salva continua sendo usada ate alguem clicar em Atualizar.
+
+Arquivos principais alterados:
+- index.html
+- service-worker.js
+
+Como publicar:
+1. Abra o repositorio do GitHub.
+2. Substitua os arquivos do repositorio pelos arquivos desta pasta.
+3. Aguarde o Cloudflare Pages publicar.
+4. Abra o app uma vez com Internet.
+5. Depois teste sem Internet.
+
+Importante:
+Quando quiser buscar dados novos da planilha, clique no botao Atualizar com Internet funcionando.

@@ -1,364 +1,557 @@
+<!DOCTYPE html>
 <html lang="pt-BR" class="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Avenorte — Códigos</title>
-<meta name="theme-color" content="#0ea5e9">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link id="manifest" rel="manifest">
-<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA1MTIgNTEyJz48cmVjdCB3aWR0aD0nNTEyJyBoZWlnaHQ9JzUxMicgcng9JzEyOCcgZmlsbD0nIzBlYTVlOScvPjx0ZXh0IHg9JzUwJScgeT0nNTglJyBmb250LXNpemU9JzMwMCcgZmlsbD0nd2hpdGUnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGRvbWluYW50LWJhc2VsaW5lPSdtaWRkbGUnIGZvbnQtZmFtaWx5PSdJbnRlciwgU3lzdGVtLVVJLCBzYW5zLXNlcmlmJyBmb250LXdlaWdodD0nODAwJz5BPC90ZXh0Pjwvc3ZnPg==">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Busca de Peças - Avenorte</title>
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.webmanifest">
 <script src="https://cdn.tailwindcss.com"></script>
-<script>tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','system-ui','-apple-system','Segoe UI','Roboto','sans-serif']}}}}</script>
-<style>
-html{-webkit-tap-highlight-color:transparent}
-body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-mark{background:transparent}
-.scrollbar::-webkit-scrollbar{width:8px;height:8px}
-.scrollbar::-webkit-scrollbar-thumb{background:#334155;border-radius:4px}
-</style>
 </head>
-<body class="bg-[#020617] text-slate-100 min-h-screen flex flex-col selection:bg-sky-500/30 selection:text-sky-100">
-<header class="sticky top-0 z-40 backdrop-blur-xl bg-slate-950/70 border-b border-slate-800">
-  <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
-    <div class="size-10 rounded-2xl bg-gradient-to-br from-sky-400 to-cyan-400 grid place-items-center shadow-lg shadow-sky-900/30">
-      <span class="text-slate-950 font-black text-xl">A</span>
-    </div>
-    <div class="leading-tight">
-      <h1 class="text-[17px] font-semibold tracking-wide">Avenorte</h1>
-      <p class="text-[11px] text-slate-400 -mt-0.5">Códigos • PWA Offline</p>
-    </div>
-    <div class="ml-auto flex items-center gap-2">
-      <span id="status" class="text-[11px] px-2.5 py-1 rounded-full border font-medium"></span>
-      <button id="btnInstall" class="hidden text-[12px] px-3 py-1.5 rounded-full bg-sky-500 text-slate-950 font-semibold hover:bg-sky-400 active:scale-95 transition">Instalar</button>
-    </div>
-  </div>
-  <nav class="max-w-5xl mx-auto px-4 pb-3 flex gap-2">
-    <button data-tab="buscar" class="tab-btn px-4 py-2 rounded-xl text-sm font-medium border transition bg-sky-500/15 text-sky-200 border-sky-800">Buscar</button>
-    <button data-tab="adicionar" class="tab-btn px-4 py-2 rounded-xl text-sm font-medium border transition bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800">Adicionar</button>
-  </nav>
-</header>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+<header class="sticky top-0 z-10 bg-slate-950/80 backdrop-blur border-b border-slate-800">
+<div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+<div class="text-xl font-semibold">Avenorte <span class="text-sky-400">Busca</span></div>
+<div class="ml-auto flex items-center gap-2">
+<span id="status" class="text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-300">Carregando...</span>
+<button id="btnAtualizar" class="text-sm px-3 py-1.5 rounded-xl bg-sky-500/10 text-sky-300 border border-sky-500/30 hover:bg-sky-500/20">Atualizar</button>
+</div></div></header>
 
-<main class="flex-1">
-  <!-- BUSCAR -->
-  <section id="tab-buscar" class="max-w-5xl mx-auto p-4">
-    <div class="flex flex-col sm:flex-row gap-3">
-      <div class="relative flex-1">
-        <svg class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3"/></svg>
-        <input id="busca" type="search" inputmode="search" placeholder="Buscar por código, descrição ou termo…" class="w-full pl-9 pr-3 py-3 rounded-2xl bg-slate-900/80 border border-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-700 placeholder:text-slate-500 text-[15px]">
-      </div>
-      <select id="filtroSetor" class="sm:w-52 py-3 px-3 rounded-2xl bg-slate-900/80 border border-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/50 text-[15px]"></select>
-    </div>
-
-    <div class="flex items-center justify-between mt-3">
-      <span id="contador" class="text-xs text-slate-400">0 resultados</span>
-      <button id="btnAtualizar" class="text-xs px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 active:scale-95">Atualizar</button>
-    </div>
-
-    <div id="resultados" class="mt-4 grid gap-2.5 sm:grid-cols-2 scrollbar"></div>
-    <div id="vazio" class="hidden text-center py-20">
-      <div class="inline-grid place-items-center size-14 rounded-2xl bg-slate-900 border border-slate-800 mb-3">🔍</div>
-      <p class="text-slate-400 text-sm">Nenhum resultado encontrado.</p>
-    </div>
-  </section>
-
-  <!-- ADICIONAR -->
-  <section id="tab-adicionar" class="max-w-5xl mx-auto p-4 hidden">
-    <form id="formAdd" class="p-4 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-4">
-      <div class="flex items-center justify-between">
-        <h2 class="font-semibold">Novo código</h2>
-        <span class="text-[11px] text-slate-400">Planilha: CÓDIGO, DESCRIÇÃO, setor, observacao, termos_busca</span>
-      </div>
-      <div class="grid sm:grid-cols-2 gap-3">
-        <div>
-          <label class="text-xs text-slate-400">CÓDIGO *</label>
-          <input id="codigo" required class="mt-1 w-full py-2.5 px-3 rounded-xl bg-slate-950 border border-slate-800 focus:ring-2 focus:ring-sky-500/50 outline-none font-mono">
-        </div>
-        <div>
-          <label class="text-xs text-slate-400">Setor</label>
-          <input id="setorInput" list="setoresList" placeholder="Ex: Avifort, Frango..." class="mt-1 w-full py-2.5 px-3 rounded-xl bg-slate-950 border border-slate-800 focus:ring-2 focus:ring-sky-500/50 outline-none">
-          <datalist id="setoresList"></datalist>
-        </div>
-        <div class="sm:col-span-2">
-          <label class="text-xs text-slate-400">DESCRIÇÃO *</label>
-          <input id="descricao" required class="mt-1 w-full py-2.5 px-3 rounded-xl bg-slate-950 border border-slate-800 focus:ring-2 focus:ring-sky-500/50 outline-none">
-        </div>
-        <div class="sm:col-span-2">
-          <label class="text-xs text-slate-400">observacao</label>
-          <input id="observacao" class="mt-1 w-full py-2.5 px-3 rounded-xl bg-slate-950 border border-slate-800 focus:ring-2 focus:ring-sky-500/50 outline-none" placeholder="Opcional">
-        </div>
-        <div class="sm:col-span-2">
-          <label class="text-xs text-slate-400">termos_busca</label>
-          <input id="termos" class="mt-1 w-full py-2.5 px-3 rounded-xl bg-slate-950 border border-slate-800 focus:ring-2 focus:ring-sky-500/50 outline-none" placeholder="palavras; separadas; por; ponto e vírgula">
-        </div>
-      </div>
-      <div class="flex gap-2 pt-2">
-        <button type="submit" class="px-4 py-2.5 rounded-xl bg-sky-500 text-slate-950 font-semibold hover:bg-sky-400 active:scale-[.98]">Salvar</button>
-        <button type="reset" class="px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700">Limpar</button>
-      </div>
-      <p class="text-[11px] text-slate-500">Se estiver offline, o item fica na fila e sincroniza automaticamente.</p>
-    </form>
-
-    <div class="mt-6">
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="font-medium">Pendentes</h3>
-        <span id="pendentesCount" class="text-xs text-slate-400">Nenhum pendente</span>
-      </div>
-      <div id="pendentesList" class="space-y-2"></div>
-    </div>
-  </section>
-</main>
-
-<footer class="max-w-5xl mx-auto px-4 py-10 text-center text-[11px] text-slate-500">
-  ID da planilha: 1IQNbrEw7cb7hRpwJVcAVD1-KTfAfiwQ-l-ez_XIAjCc • Feito para Avenorte • Funciona offline
-</footer>
-
-<div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 hidden">
-  <div class="px-4 py-2.5 rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl text-sm flex items-center gap-2">
-    <span id="toastIcon">✓</span><span id="toastMsg">Copiado</span>
-  </div>
+<main class="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
+<div class="flex gap-2 mb-6 bg-slate-900 p-1 rounded-2xl border border-slate-800">
+  <button id="abaPecas" class="flex-1 px-4 py-2.5 rounded-xl bg-sky-500 text-slate-950 font-semibold">Peças</button>
+  <button id="abaCCM" class="flex-1 px-4 py-2.5 rounded-xl bg-transparent text-slate-300 hover:bg-slate-800">CCM</button>
 </div>
 
+<div class="grid md:grid-cols-3 gap-4 mb-6">
+<div class="md:col-span-2">
+<label class="text-sm text-slate-400">Buscar</label>
+<input id="q" type="search" placeholder="Código, descrição..." class="w-full mt-1 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-100 outline-none focus:ring-2 focus:ring-sky-500">
+</div>
+<div id="filtroWrap">
+<label class="text-sm text-slate-400" id="labelFiltro">Filtrar por setor</label>
+<select id="setor" class="w-full mt-1 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-100 outline-none focus:ring-2 focus:ring-sky-500">
+<option value="">Todos</option>
+</select>
+</div></div>
+
+<div class="flex items-center justify-between gap-3 mb-3">
+<div class="text-sm text-sky-200"><span id="contagem">0</span> resultados</div>
+<div class="flex gap-2">
+<button id="btnBuscar" class="px-4 py-2 rounded-xl bg-sky-500 text-slate-950 font-medium hover:bg-sky-400">Buscar</button>
+<button id="btnLimpar" class="px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700">Limpar</button>
+<button id="btnAdicionar" class="px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700">Adicionar</button>
+</div></div>
+
+<div id="lista" class="grid gap-3"></div>
+</main>
+
+<dialog id="modalAdd" class="backdrop:bg-slate-950/70 p-0 rounded-2xl border border-slate-800 w-full max-w-lg">
+<form method="dialog" class="bg-slate-900 p-5">
+<h2 class="text-lg font-semibold mb-4 text-slate-100" id="tituloModal">Adicionar item</h2>
+<div class="grid gap-3" id="camposAdd">
+<input id="fCodigo" placeholder="Código" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500">
+<input id="fDescricao" placeholder="Descrição" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500">
+<input id="fSetor" placeholder="Setor" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500">
+<input id="fObservacao" placeholder="Observação" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500">
+<input id="fTermos" placeholder="Termos de busca" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder:text-slate-500">
+</div>
+<div class="mt-5 flex justify-end gap-2">
+<button class="px-4 py-2 rounded-xl bg-slate-800 text-slate-100">Cancelar</button>
+<button id="salvarAdd" class="px-4 py-2 rounded-xl bg-sky-500 text-slate-950">Salvar</button>
+</div></form></dialog>
+
+<script src="dados-iniciais-v3.js?v=6"></script>
 <script>
-const APPS_SCRIPT_URL = 'COLE_AQUI_URL_DO_APPS_SCRIPT';
+const API_PECAS_URL = "https://script.google.com/macros/s/AKfycbwpSh4hUeWBz4BQPYPYbB2m0N0y01ViJrB219y2THEOVj5qsw90gA6qBFbexJtBs2Rx/exec"
+const API_CCM_URL = API_PECAS_URL
+const STORAGE_KEY = "avenorte-cache-v3"
+const CSV_PECAS = ["lista_busca_google_sheets.csv"]
+const el = sel => document.querySelector(sel)
+const lista = el('#lista'), q = el('#q'), setor = el('#setor'), statusEl = el('#status')
+let abaAtual = 'dados'
+let dados = [], dadosFiltrados = []
+let itemEditando = null
 
-const STORAGE_KEY = 'avenorte_dados_v2';
-const PENDENTES_KEY = 'avenorte_pendentes_v2';
-
-let dados = [];
-let deferredPrompt = null;
-
-// Elements
-const busca = document.getElementById('busca');
-const filtroSetor = document.getElementById('filtroSetor');
-const resultados = document.getElementById('resultados');
-const vazio = document.getElementById('vazio');
-const contador = document.getElementById('contador');
-const btnAtualizar = document.getElementById('btnAtualizar');
-const statusEl = document.getElementById('status');
-const btnInstall = document.getElementById('btnInstall');
-const setoresList = document.getElementById('setoresList');
-const formAdd = document.getElementById('formAdd');
-const pendentesList = document.getElementById('pendentesList');
-const pendentesCount = document.getElementById('pendentesCount');
-const toast = document.getElementById('toast');
-const toastMsg = document.getElementById('toastMsg');
-
-// Tabs
-document.querySelectorAll('.tab-btn').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    document.querySelectorAll('.tab-btn').forEach(x=>x.className='tab-btn px-4 py-2 rounded-xl text-sm font-medium border transition bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800');
-    b.className='tab-btn px-4 py-2 rounded-xl text-sm font-medium border transition bg-sky-500/15 text-sky-200 border-sky-800';
-    const t = b.dataset.tab;
-    document.getElementById('tab-buscar').classList.toggle('hidden', t!=='buscar');
-    document.getElementById('tab-adicionar').classList.toggle('hidden', t!=='adicionar');
-  });
-});
-
-const norm = s => (s||'').toString().normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
-const escapeHtml = s => (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-function highlight(text, q){
-  if(!q || !text) return escapeHtml(text);
-  try{
-    const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');
-    return escapeHtml(text).replace(re, m=>`<mark class="bg-amber-400/25 text-amber-100 px-0.5 rounded">${m}</mark>`);
-  }catch{ return escapeHtml(text) }
-}
-function showToast(msg, icon='✓'){
-  toastMsg.textContent = msg; document.getElementById('toastIcon').textContent = icon;
-  toast.classList.remove('hidden'); clearTimeout(showToast._t);
-  showToast._t = setTimeout(()=>toast.classList.add('hidden'), 1800);
-}
-
-function updateOnline(){
-  const on = navigator.onLine;
-  statusEl.textContent = on ? 'Online' : 'Offline';
-  statusEl.className = `text-[11px] px-2.5 py-1 rounded-full border font-medium ${on ? 'border-emerald-800 bg-emerald-950/50 text-emerald-300' : 'border-amber-800 bg-amber-950/50 text-amber-300'}`;
-}
-window.addEventListener('online', ()=>{ updateOnline(); syncPendentes(); carregarDados(true); });
-window.addEventListener('offline', updateOnline);
-
-async function carregarDados(force=false){
-  try{
-    const cached = localStorage.getItem(STORAGE_KEY);
-    if(cached && !force){
-      dados = JSON.parse(cached);
-      atualizarUI();
-    }
-    if(!APPS_SCRIPT_URL.startsWith('http')){ if(!cached) showToast('Configure a URL do Apps Script','⚠️'); return; }
-    if(navigator.onLine){
-      const res = await fetch(APPS_SCRIPT_URL + '?action=list', {cache:'no-store'});
-      if(res.ok){
-        const json = await res.json();
-        dados = Array.isArray(json) ? json : (json.data || []);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
-        atualizarUI();
-        showToast('Dados atualizados');
-      }
-    }
-  }catch(e){ console.error(e); showToast('Erro ao carregar','⚠️'); }
-}
-
-function atualizarUI(){
-  const setores = [...new Set(dados.map(d=>d.setor).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-  filtroSetor.innerHTML = `<option>Todos</option>` + setores.map(s=>`<option>${escapeHtml(s)}</option>`).join('');
-  setoresList.innerHTML = setores.map(s=>`<option value="${escapeHtml(s)}">`).join('');
-  filtrar();
-}
-
-let tBusca;
-busca.addEventListener('input', ()=>{ clearTimeout(tBusca); tBusca=setTimeout(filtrar,120); });
-filtroSetor.addEventListener('change', filtrar);
-btnAtualizar.addEventListener('click', ()=>carregarDados(true));
-
-function filtrar(){
-  const q = busca.value.trim();
-  const nq = norm(q);
-  const setorSel = filtroSetor.value || 'Todos';
-  const filtered = dados.filter(it=>{
-    if(setorSel!=='Todos' && (it.setor||'')!==setorSel) return false;
-    if(!nq) return true;
-    const hay = norm([it.codigo,it.descricao,it.termos_busca].join(' '));
-    return hay.includes(nq);
-  });
-  contador.textContent = `${filtered.length} ${filtered.length===1?'resultado':'resultados'}`;
-  resultados.innerHTML = '';
-  if(!filtered.length){ vazio.classList.remove('hidden'); return; }
-  vazio.classList.add('hidden');
-  const frag = document.createDocumentFragment();
-  filtered.slice(0,600).forEach(it=>{
-    const btn = document.createElement('button');
-    btn.className = 'group text-left w-full p-4 rounded-2xl bg-slate-900/70 hover:bg-slate-900 border border-slate-800 hover:border-sky-800/60 transition active:scale-[.99]';
-    btn.innerHTML = `
-      <div class="flex items-start gap-3">
-        <div class="flex-1 min-w-0">
-          <div class="font-mono text-[15px] font-bold text-sky-300 tracking-wide">${highlight(it.codigo, q)}</div>
-          <div class="mt-1.5 text-[14px] leading-snug text-slate-100 break-words">${highlight(it.descricao, q)}</div>
-          ${it.observacao?`<div class="mt-1.5 text-[12px] italic text-slate-400">${escapeHtml(it.observacao)}</div>`:''}
-          ${it.termos_busca?`<div class="mt-1 text-[10px] text-slate-500 truncate">${escapeHtml(it.termos_busca)}</div>`:''}
-        </div>
-        ${it.setor?`<span class="shrink-0 text-[10px] px-2 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-slate-300">${escapeHtml(it.setor)}</span>`:''}
-      </div>`;
-    btn.onclick = async ()=>{ try{ await navigator.clipboard.writeText(it.codigo||''); showToast(`Copiado: ${it.codigo}`);}catch{ showToast('Não foi possível copiar','⚠️')} };
-    frag.appendChild(btn);
-  });
-  resultados.appendChild(frag);
-}
-
-// Adicionar
-formAdd.addEventListener('submit', async e=>{
-  e.preventDefault();
-  const item = {
-    codigo: document.getElementById('codigo').value.trim(),
-    descricao: document.getElementById('descricao').value.trim(),
-    setor: document.getElementById('setorInput').value.trim(),
-    observacao: document.getElementById('observacao').value.trim(),
-    termos_busca: document.getElementById('termos').value.trim(),
-  };
-  if(!item.codigo || !item.descricao){ showToast('Preencha código e descrição','⚠️'); return; }
-  
-  if(navigator.onLine && APPS_SCRIPT_URL.startsWith('http')){
-    try{
-      await salvarOnline(item);
-      dados.unshift(item);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
-      atualizarUI();
-      formAdd.reset();
-      showToast('Salvo na planilha');
-      return;
-    }catch(err){ console.warn(err) }
+const texto = valor => String(valor ?? '').trim()
+const safe = valor => texto(valor).toLowerCase()
+const semAcento = valor => safe(valor).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+const pegar = (obj, ...keys) => {
+  for (const key of keys) {
+    const valor = texto(obj?.[key])
+    if (valor) return valor
   }
-  queuePendente(item);
-  formAdd.reset();
-  showToast('Salvo offline (pendente)');
-});
+  return ''
+}
 
-async function salvarOnline(item){
-  const res = await fetch(APPS_SCRIPT_URL, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(item)
-  });
-  if(!res.ok) throw new Error('Falha HTTP');
-  return res.text();
-}
-function queuePendente(item){
-  const arr = JSON.parse(localStorage.getItem(PENDENTES_KEY)||'[]');
-  arr.unshift({...item,_ts:Date.now()});
-  localStorage.setItem(PENDENTES_KEY, JSON.stringify(arr));
-  renderPendentes();
-}
-function renderPendentes(){
-  const arr = JSON.parse(localStorage.getItem(PENDENTES_KEY)||'[]');
-  pendentesCount.textContent = arr.length ? `${arr.length} pendente(s)` : 'Nenhum pendente';
-  pendentesList.innerHTML = arr.map((p,i)=>`
-    <div class="flex items-center gap-3 p-3 rounded-2xl bg-slate-900 border border-slate-800">
-      <div class="flex-1 min-w-0">
-        <div class="font-mono text-sm text-sky-300 truncate">${escapeHtml(p.codigo)}</div>
-        <div class="text-xs text-slate-300 truncate">${escapeHtml(p.descricao)} ${p.setor?`• ${escapeHtml(p.setor)}`:''}</div>
-      </div>
-      <button data-del="${i}" class="text-[11px] px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-red-900/40 border border-slate-700">Excluir</button>
-    </div>`).join('') || `<div class="text-sm text-slate-500 py-6 text-center border border-dashed border-slate-800 rounded-2xl">Tudo sincronizado ✓</div>`;
-}
-pendentesList.addEventListener('click', e=>{
-  const b = e.target.closest('[data-del]'); if(!b) return;
-  const i = +b.dataset.del;
-  const arr = JSON.parse(localStorage.getItem(PENDENTES_KEY)||'[]');
-  arr.splice(i,1);
-  localStorage.setItem(PENDENTES_KEY, JSON.stringify(arr));
-  renderPendentes();
-  showToast('Removido da fila');
-});
+function salvarCache(arr){ localStorage.setItem(STORAGE_KEY + '-' + abaAtual, JSON.stringify(arr)) }
+function carregarCache(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY + '-' + abaAtual)||'[]') }catch{ return [] } }
 
-async function syncPendentes(){
-  if(!navigator.onLine || !APPS_SCRIPT_URL.startsWith('http')) return;
-  const arr = JSON.parse(localStorage.getItem(PENDENTES_KEY)||'[]');
-  if(!arr.length) return;
-  const restantes = [];
-  let ok = 0;
-  for(const it of arr){
-    try{ await salvarOnline(it); ok++; dados.unshift(it); }
-    catch{ restantes.push(it); }
+function normalizarItem(item) {
+  const codigo = pegar(item, 'codigo', 'tag')
+  const descricao = pegar(item, 'descricao', 'nome')
+  const setor = pegar(item, 'setor', 'porta')
+  const observacao = pegar(item, 'observacao')
+  const ativa = pegar(item, 'ativa')
+  const termosBusca = [codigo, descricao, setor, observacao, ativa, pegar(item, 'termos_busca')].join(' ')
+
+  return {
+    ...item,
+    codigo,
+    descricao,
+    setor,
+    observacao,
+    ativa,
+    termos_busca: termosBusca
   }
-  localStorage.setItem(PENDENTES_KEY, JSON.stringify(restantes));
-  if(ok){ localStorage.setItem(STORAGE_KEY, JSON.stringify(dados)); atualizarUI(); showToast(`${ok} itens sincronizados`); }
-  renderPendentes();
 }
 
-// PWA
-window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredPrompt=e; btnInstall.classList.remove('hidden'); });
-btnInstall.addEventListener('click', async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; btnInstall.classList.add('hidden'); });
-window.addEventListener('appinstalled', ()=>btnInstall.classList.add('hidden'));
-
-// Manifest dinâmico
-const manifest = {
-  name:"Avenorte Códigos",
-  short_name:"Avenorte",
-  start_url:".",
-  display:"standalone",
-  background_color:"#020617",
-  theme_color:"#0ea5e9",
-  icons:[{src:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA1MTIgNTEyJz48cmVjdCB3aWR0aD0nNTEyJyBoZWlnaHQ9JzUxMicgcng9JzEyOCcgZmlsbD0nIzBlYTVlOScvPjx0ZXh0IHg9JzUwJScgeT0nNTglJyBmb250LXNpemU9JzMwMCcgZmlsbD0nd2hpdGUnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGRvbWluYW50LWJhc2VsaW5lPSdtaWRkbGUnIGZvbnQtZmFtaWx5PSdJbnRlciBzYW5zLXNlcmlmJyBmb250LXdlaWdodD04MDA+QTwvdGV4dD48L3N2Zz4=",sizes:"512x512",type:"image/svg+xml",purpose:"any maskable"}]
-};
-document.getElementById('manifest').href = URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/json'}));
-
-// Service Worker inline
-if('serviceWorker' in navigator){
-  const sw = `
-    const CACHE='avenorte-v3';
-    self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])).then(()=>self.skipWaiting()))});
-    self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x)))));self.clients.claim()});
-    self.addEventListener('fetch',e=>{ if(e.request.method!=='GET')return; const url=new URL(e.request.url); if(url.origin===location.origin){ e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{const cp=res.clone();caches.open(CACHE).then(c=>c.put(e.request,cp));return res}).catch(()=>caches.match('./')))) } });
-  `;
-  const blob = new Blob([sw],{type:'application/javascript'});
-  navigator.serviceWorker.register(URL.createObjectURL(blob));
+function juntarListas(...listas) {
+  const mapa = new Map()
+  listas.flat().forEach(itemOriginal => {
+    const item = normalizarItem(itemOriginal || {})
+    const chave = semAcento(pegar(item, 'codigo', 'tag') || `${pegar(item, 'descricao', 'nome')} ${pegar(item, 'setor', 'porta')}`)
+    if (!chave) return
+    mapa.set(chave, { ...(mapa.get(chave) || {}), ...item })
+  })
+  return [...mapa.values()].sort((a,b)=>pegar(a, 'codigo', 'tag').localeCompare(pegar(b, 'codigo', 'tag'), 'pt-BR', {numeric:true}))
 }
 
-// Init
-updateOnline();
-renderPendentes();
-carregarDados();
+function dadosEmbutidos() {
+  return Array.isArray(window.DADOS_INICIAIS)? window.DADOS_INICIAIS : []
+}
+
+async function carregarCsvsPecas() {
+  const listas = await Promise.all(CSV_PECAS.map(async arquivo => {
+    const resposta = await fetch(`${arquivo}?v=6`, {cache:'no-store'})
+    if (!resposta.ok) throw new Error(`Nao carregou ${arquivo}`)
+    return csvParaItens(await resposta.text())
+  }))
+  return listas.flat()
+}
+
+function csvParaItens(csv) {
+  const linhas = separarCsv(csv)
+  const cabecalho = (linhas.shift() || []).map(coluna => semAcento(coluna))
+  return linhas.map(linha => {
+    const item = {}
+    cabecalho.forEach((coluna, indice) => item[coluna] = linha[indice] || '')
+    return item
+  })
+}
+
+function separarCsv(csv) {
+  const linhas = []
+  let linha = [], campo = '', dentroAspas = false
+  for (let i = 0; i < csv.length; i++) {
+    const char = csv[i], proximo = csv[i + 1]
+    if (char === '"' && dentroAspas && proximo === '"') {
+      campo += '"'
+      i++
+    } else if (char === '"') {
+      dentroAspas = !dentroAspas
+    } else if (char === ',' && !dentroAspas) {
+      linha.push(campo)
+      campo = ''
+    } else if ((char === '\n' || char === '\r') && !dentroAspas) {
+      if (char === '\r' && proximo === '\n') i++
+      linha.push(campo)
+      if (linha.some(valor => texto(valor))) linhas.push(linha)
+      linha = []
+      campo = ''
+    } else {
+      campo += char
+    }
+  }
+  linha.push(campo)
+  if (linha.some(valor => texto(valor))) linhas.push(linha)
+  return linhas
+}
+
+async function carregarDados(){
+statusEl.textContent = 'Carregando...'
+statusEl.className = 'text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-300'
+try{
+const j = await carregarApi()
+const dadosApi = Array.isArray(j)? j : (j.itens || j.data || [])
+if (abaAtual === 'dados') {
+  let dadosCsv = []
+  try { dadosCsv = await carregarCsvsPecas() } catch(e) { console.warn(e) }
+  dados = juntarListas(dadosEmbutidos(), dadosCsv, dadosApi)
+} else {
+  dados = juntarListas(dadosApi)
+}
+salvarCache(dados)
+montarSetores()
+aplicarFiltro()
+statusEl.textContent = 'Online'
+statusEl.className = 'text-xs px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+}catch(e){
+console.error(e)
+statusEl.textContent = 'Offline'
+statusEl.className = 'text-xs px-2 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30'
+dados = carregarCache()
+if (abaAtual === 'dados') dados = juntarListas(dados, dadosEmbutidos())
+montarSetores()
+aplicarFiltro()
+}}
+
+function carregarDadosSalvos(){
+statusEl.textContent = 'Dados salvos'
+statusEl.className = 'text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-300'
+dados = carregarCache()
+if (abaAtual === 'dados') dados = juntarListas(dados, dadosEmbutidos())
+montarSetores()
+aplicarFiltro()
+}
+
+function carregarApi() {
+  return chamarJsonp(abaAtual === 'dados'? API_PECAS_URL : API_CCM_URL, {acao: 'listar', aba: abaAtual})
+}
+
+function chamarJsonp(url, params = {}) {
+  return new Promise((resolve, reject) => {
+    const callback = `avenorte_${Date.now()}_${Math.random().toString(36).slice(2)}`
+    const script = document.createElement('script')
+    const query = new URLSearchParams({...params, callback, t: Date.now()})
+    const timer = setTimeout(() => {
+      limpar()
+      reject(new Error('Tempo esgotado ao carregar planilha.'))
+    }, 15000)
+
+    function limpar() {
+      clearTimeout(timer)
+      delete window[callback]
+      script.remove()
+    }
+
+    window[callback] = resposta => {
+      limpar()
+      resolve(resposta || {itens: []})
+    }
+
+    script.onerror = () => {
+      limpar()
+      reject(new Error('Nao consegui carregar a planilha.'))
+    }
+
+    script.src = `${url}?${query.toString()}`
+    document.body.appendChild(script)
+  })
+}
+
+function atualizarLabels() {
+  const isCCM = abaAtual === 'ccm'
+  el('#labelFiltro').textContent = isCCM? 'Filtrar por porta' : 'Filtrar por setor'
+  el('#fCodigo').placeholder = isCCM? 'Tag' : 'Código'
+  el('#fDescricao').placeholder = isCCM? 'Nome' : 'Descrição'
+  el('#fSetor').placeholder = isCCM? 'Porta' : 'Setor'
+  el('#fObservacao').placeholder = isCCM? 'Ativa - SIM ou NÃO' : 'Observação'
+  el('#tituloModal').textContent = isCCM? 'Adicionar tag CCM' : 'Adicionar peça'
+  q.placeholder = isCCM? 'Tag, nome, porta...' : 'Código, descrição...'
+}
+
+function tituloFormulario() {
+  const acao = itemEditando? 'Editar' : 'Adicionar'
+  const tipo = abaAtual === 'ccm'? 'tag CCM' : 'peça'
+  el('#tituloModal').textContent = `${acao} ${tipo}`
+  el('#salvarAdd').textContent = itemEditando? 'Salvar alteração' : 'Salvar'
+}
+
+function montarSetores(){
+const campo = abaAtual === 'ccm'? 'porta' : 'setor'
+atualizarLabels()
+const setores = [...new Set(dados.map(x=>pegar(x, campo)).filter(Boolean))].sort((a,b)=>a.localeCompare(b, 'pt-BR', {numeric:true}))
+setor.innerHTML = '<option value="">Todos</option>' + setores.map(s=>`<option>${escapar(s)}</option>`).join('')
+el('#filtroWrap').style.display = setores.length? 'block' : 'none'
+}
+
+function aplicarFiltro(){
+const termo = semAcento(q.value)
+const s = setor.value
+const campoSetor = abaAtual === 'ccm'? 'porta' : 'setor'
+dadosFiltrados = dados.filter(item=>{
+const okSetor = !s || pegar(item, campoSetor) === s
+const base = [
+  pegar(item, 'codigo', 'tag'),
+  pegar(item, 'descricao', 'nome'),
+  pegar(item, 'setor', 'porta'),
+  pegar(item, 'observacao'),
+  pegar(item, 'ativa'),
+  pegar(item, 'termos_busca')
+].join(' ')
+const okBusca = !termo || semAcento(base).includes(termo)
+return okSetor && okBusca
+})
+render()
+}
+
+function limparBusca() {
+  q.value = ''
+  setor.value = ''
+  aplicarFiltro()
+  q.focus()
+}
+
+function render(){
+el('#contagem').textContent = dadosFiltrados.length
+lista.innerHTML = dadosFiltrados.map((item, indice)=>{
+let statusHTML = ''
+if (abaAtual === 'ccm') {
+  const ativa = pegar(item, 'ativa').toUpperCase()
+  if (ativa === 'SIM') statusHTML = '<span class="px-2 py-1 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/30 text-xs">ATIVA</span>'
+  else if (ativa === 'NÃO' || ativa === 'NAO') statusHTML = '<span class="px-2 py-1 rounded-full bg-red-500/10 text-red-300 border border-red-500/30 text-xs">INATIVA</span>'
+  else statusHTML = '<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-400 text-xs">A VERIFICAR</span>'
+}
+
+const codigo = pegar(item, 'codigo', 'tag') || '-'
+const desc = pegar(item, 'descricao', 'nome')
+const setorVal = pegar(item, 'setor', 'porta')
+const obs = pegar(item, 'observacao')
+
+return `
+<div class="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+<div class="flex items-start justify-between gap-3">
+<div class="flex-1 min-w-0">
+<div class="text-lg font-semibold text-slate-100 break-words">${escapar(codigo)} ${statusHTML}</div>
+${desc? `<div class="text-slate-300 break-words">${escapar(desc)}</div>` : ''}
+${setorVal || (obs && abaAtual !== 'ccm')? `
+<div class="mt-2 flex flex-wrap gap-2 text-xs">
+${setorVal? `<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${escapar(setorVal)}</span>` : ''}
+${obs && abaAtual !== 'ccm'? `<span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">${escapar(obs)}</span>` : ''}
+</div>` : ''}
+</div>
+<div class="shrink-0 flex flex-col gap-2">
+<button type="button" data-editar="${indice}" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 hover:bg-slate-700">Editar</button>
+<button type="button" data-excluir="${indice}" class="px-3 py-1.5 rounded-xl bg-transparent border border-red-500/20 text-red-300/70 hover:bg-red-500/10 hover:text-red-200 text-xs">Excluir</button>
+</div>
+</div></div>
+`}).join('') || `<div class="text-center text-slate-500 py-10">Nenhum resultado</div>`
+
+lista.querySelectorAll('[data-editar]').forEach(botao => {
+  botao.onclick = () => abrirEditar(dadosFiltrados[Number(botao.dataset.editar)])
+})
+lista.querySelectorAll('[data-excluir]').forEach(botao => {
+  botao.onclick = () => excluirItem(dadosFiltrados[Number(botao.dataset.excluir)])
+})
+}
+
+function trocarAba(novaAba) {
+  abaAtual = novaAba
+  el('#abaPecas').className = novaAba === 'dados'?
+    'flex-1 px-4 py-2.5 rounded-xl bg-sky-500 text-slate-950 font-semibold' :
+    'flex-1 px-4 py-2.5 rounded-xl bg-transparent text-slate-300 hover:bg-slate-800'
+  el('#abaCCM').className = novaAba === 'ccm'?
+    'flex-1 px-4 py-2.5 rounded-xl bg-sky-500 text-slate-950 font-semibold' :
+    'flex-1 px-4 py-2.5 rounded-xl bg-transparent text-slate-300 hover:bg-slate-800'
+  q.value = ''
+  setor.value = ''
+  carregarDadosSalvos()
+}
+
+async function adicionarItem(obj){
+statusEl.textContent = 'Salvando...'
+try{
+const res = abaAtual === 'dados'
+  ? await chamarJsonp(API_PECAS_URL, {acao: 'cadastrar', aba: abaAtual, ...obj})
+  : await chamarJsonp(API_CCM_URL, {acao: 'cadastrar', aba: abaAtual, ...obj})
+if(res.ok){
+await carregarDados()
+statusEl.textContent = 'Salvo!'
+setTimeout(()=>statusEl.textContent = 'Online', 1500)
+return true
+} else {
+statusEl.textContent = 'Erro'
+alert('Erro: ' + (res.erro || 'Não foi possível salvar'))
+setTimeout(()=>statusEl.textContent = 'Online', 2000)
+return false
+}
+}catch(e){
+statusEl.textContent = 'Erro de conexão'
+alert('Erro de conexão. Verifique o Apps Script.')
+setTimeout(()=>statusEl.textContent = 'Online', 2000)
+return false
+}
+}
+
+function acaoInvalida(res) {
+  const msg = `${res?.codigo || ''} ${res?.erro || ''} ${res?.mensagem || ''}`.toLowerCase()
+  return msg.includes('acao_invalida') || msg.includes('acao invalida') || msg.includes('ação inválida')
+}
+
+async function atualizarItemPorSubstituicao(obj, dadosAtualizados) {
+  const url = abaAtual === 'dados'? API_PECAS_URL : API_CCM_URL
+  const senha = prompt('Senha para substituir este item')
+  if (senha === null) return {ok: false, mensagem: 'Operação cancelada.'}
+  if (!/^\d{4}$/.test(senha)) return {ok: false, mensagem: 'A senha precisa ter 4 dígitos.'}
+  const apagar = await chamarJsonp(url, {
+    acao: 'deletar',
+    aba: abaAtual,
+    senha,
+    linha: dadosAtualizados.linha,
+    codigo: dadosAtualizados.codigo_original,
+    tag: dadosAtualizados.codigo_original
+  })
+
+  if (!apagar.ok && !['nao_encontrado', 'não_encontrado'].includes(apagar.codigo)) {
+    return apagar
+  }
+
+  return chamarJsonp(url, {acao: 'cadastrar', aba: abaAtual, ...obj})
+}
+
+async function excluirItem(item) {
+  const codigo = pegar(item, 'codigo', 'tag')
+  const senha = prompt(`Senha para excluir "${codigo}"`)
+  if (senha === null) return
+  if (!/^\d{4}$/.test(senha)) {
+    alert('A senha precisa ter 4 dígitos.')
+    return
+  }
+
+  const confirmar = confirm(`Excluir "${codigo}" da planilha?`)
+  if (!confirmar) return
+
+  statusEl.textContent = 'Excluindo...'
+  try {
+    const url = abaAtual === 'dados'? API_PECAS_URL : API_CCM_URL
+    const res = await chamarJsonp(url, {
+      acao: 'deletar',
+      aba: abaAtual,
+      senha,
+      linha: pegar(item, 'linha'),
+      codigo,
+      tag: codigo
+    })
+
+    if (res.ok) {
+      await carregarDados()
+      statusEl.textContent = 'Excluído!'
+      setTimeout(()=>statusEl.textContent = 'Online', 1500)
+      return
+    }
+
+    statusEl.textContent = 'Erro'
+    alert('Erro: ' + (res.erro || res.mensagem || 'Não foi possível excluir'))
+    setTimeout(()=>statusEl.textContent = 'Online', 2000)
+  } catch(e) {
+    statusEl.textContent = 'Erro de conexão'
+    alert('Erro de conexão. Verifique o Apps Script.')
+    setTimeout(()=>statusEl.textContent = 'Online', 2000)
+  }
+}
+
+async function atualizarItem(obj){
+statusEl.textContent = 'Salvando...'
+try{
+const original = itemEditando || {}
+const dadosAtualizados = {
+  ...obj,
+  linha: pegar(original, 'linha'),
+  codigo_original: pegar(original, 'codigo', 'tag')
+}
+const res = abaAtual === 'dados'
+  ? await chamarJsonp(API_PECAS_URL, {acao: 'atualizar', aba: abaAtual, ...dadosAtualizados})
+  : await chamarJsonp(API_CCM_URL, {acao: 'atualizar', aba: abaAtual, ...dadosAtualizados})
+const finalRes = res.ok || !acaoInvalida(res)? res : await atualizarItemPorSubstituicao(obj, dadosAtualizados)
+if(finalRes.ok){
+await carregarDados()
+statusEl.textContent = 'Alterado!'
+setTimeout(()=>statusEl.textContent = 'Online', 1500)
+return true
+} else {
+statusEl.textContent = 'Erro'
+alert('Erro: ' + (finalRes.erro || finalRes.mensagem || 'Não foi possível alterar'))
+setTimeout(()=>statusEl.textContent = 'Online', 2000)
+return false
+}
+}catch(e){
+statusEl.textContent = 'Erro de conexão'
+alert('Erro de conexão. Verifique o Apps Script.')
+setTimeout(()=>statusEl.textContent = 'Online', 2000)
+return false
+}
+}
+
+function abrirAdicionar() {
+  itemEditando = null
+  atualizarLabels()
+  tituloFormulario()
+  el('#modalAdd form').reset()
+  el('#modalAdd').showModal()
+}
+
+function abrirEditar(item) {
+  itemEditando = item
+  atualizarLabels()
+  tituloFormulario()
+  el('#fCodigo').value = pegar(item, 'codigo', 'tag')
+  el('#fDescricao').value = pegar(item, 'descricao', 'nome')
+  el('#fSetor').value = pegar(item, 'setor', 'porta')
+  el('#fObservacao').value = abaAtual === 'ccm'? pegar(item, 'ativa') : pegar(item, 'observacao')
+  el('#fTermos').value = pegar(item, 'termos_busca')
+  el('#modalAdd').showModal()
+}
+
+function escapar(valor) {
+  return String(valor ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+el('#abaPecas').onclick = () => trocarAba('dados')
+el('#abaCCM').onclick = () => trocarAba('ccm')
+el('#btnBuscar').onclick = aplicarFiltro
+el('#btnLimpar').onclick = limparBusca
+el('#btnAtualizar').onclick = carregarDados
+el('#btnAdicionar').onclick = ()=> {
+  abrirAdicionar()
+}
+el('#salvarAdd').onclick = async (e)=>{
+e.preventDefault()
+const obj = {
+  codigo: el('#fCodigo').value.trim(),
+  descricao: el('#fDescricao').value.trim(),
+  setor: el('#fSetor').value.trim(),
+  observacao: el('#fObservacao').value.trim(),
+  termos_busca: el('#fTermos').value.trim()
+}
+if(abaAtual === 'ccm') {
+  obj.tag = obj.codigo
+  obj.nome = obj.descricao
+  obj.porta = obj.setor
+  obj.ativa = obj.observacao
+  delete obj.codigo
+  delete obj.descricao
+  delete obj.setor
+  delete obj.observacao
+}
+const cod = obj.codigo || obj.tag
+if(!cod) return alert('Código/Tag obrigatório')
+const codigoOriginal = itemEditando? semAcento(pegar(itemEditando, 'codigo', 'tag')) : ''
+const existe = dados.find(item => semAcento(pegar(item, 'codigo', 'tag')) === semAcento(cod) && semAcento(pegar(item, 'codigo', 'tag')) !== codigoOriginal)
+if(existe) return alert('Código já existe: ' + cod)
+const salvou = itemEditando? await atualizarItem(obj) : await adicionarItem(obj)
+if(salvou){
+el('#modalAdd').close()
+el('#modalAdd form').reset()
+itemEditando = null
+}
+}
+let debounce
+q.oninput = () => {
+  clearTimeout(debounce)
+  debounce = setTimeout(aplicarFiltro, 200)
+}
+setor.onchange = aplicarFiltro
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js')
+    .catch(() => {})
+}
+carregarDadosSalvos()
 </script>
-<script>(function(){document.addEventListener("click",function(e){var a=e.target.closest("[data-product-id]");if(!a)return;e.preventDefault();var pid=a.getAttribute("data-product-id");if(pid)parent.postMessage({type:"ecto-artifact-link-click",productId:pid},"*")})})();</script>
 </body>
 </html>
