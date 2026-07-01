@@ -1,18 +1,20 @@
-CORRECAO: PECAS E CCM SEPARADOS
+CORRECAO LIMPA: SEM BASE ANTIGA MISTURADA
 
 Mudanca desta versao:
-- Itens com setor/porta começando com "PORTA" nao aparecem mais na aba Pecas.
-- Esses itens ficam na aba CCM.
-- O pacote offline foi atualizado para v8.
+- O app nao mistura mais a base antiga embutida com a aba Pecas.
+- Ao abrir, usa somente os dados salvos da ultima atualizacao manual.
+- Ao clicar em Atualizar, busca somente a aba correta da planilha.
+- Foi criada uma chave nova de dados salvos: avenorte-cache-v4.
+- O offline foi atualizado para v9.
 
-Arquivos principais:
-- index.html
-- service-worker.js
+Depois de publicar:
+1. Abra o app com internet.
+2. Clique em Atualizar na aba Pecas.
+3. Clique em CCM e clique em Atualizar tambem, se quiser salvar CCM offline.
+4. Depois teste sem internet.
 
-Como publicar:
-1. Envie os arquivos desta pasta na raiz do GitHub.
-2. Aguarde a publicacao.
-3. Teste: https://avenorte-busca.pages.dev/service-worker.js?v=8
-4. Deve aparecer: busca-pecas-avenorte-v8
+Teste do service-worker:
+https://avenorte-busca.pages.dev/service-worker.js?v=9
 
-Depois abra o app e clique em Atualizar uma vez com internet boa.
+Deve aparecer:
+busca-pecas-avenorte-v9
