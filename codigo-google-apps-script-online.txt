@@ -1,0 +1,319 @@
+const PLANILHA_ID = '1lQNbrEw7cb7hRpwJVcAVD1-KTfAflwQ-l-ez_XIAjCc';
+const TOKEN = '';
+const SENHA_EXCLUIR = '7392';
+
+const ABAS = {
+  dados: {
+    nome: 'dados',
+    cabecalho: ['codigo', 'descricao', 'setor', 'observacao', 'termos_busca'],
+    obrigatorios: ['codigo', 'descricao']
+  },
+  ccm: {
+    nome: 'ccm',
+    cabecalho: ['tag', 'nome', 'porta', 'ativa', 'termos_busca'],
+    obrigatorios: ['tag']
+  }
+};
+
+function texto(valor) {
+  return String(valor || '').trim().replace(/\s+/g, ' ');
+}
+
+function normalizar(valor) {
+  return texto(valor)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function abaEscolhida(e) {
+  const nome = normalizar(e.parameter.aba || e.parameter.sheet || 'dados');
+  return nome === 'ccm' ? 'ccm' : 'dados';
+}
+
+function configAba(e) {
+  return ABAS[abaEscolhida(e)];
+}
+
+function abrirAba(e) {
+  const planilha = SpreadsheetApp.openById(PLANILHA_ID);
+  const config = configAba(e);
+  return planilha.getSheetByName(config.nome) || planilha.getSheets()[0];
+}
+
+function garantirCabecalho(aba, config) {
+  const primeiraLinha = aba.getRange(1, 1, 1, config.cabecalho.length).getValues()[0];
+  const vazio = primeiraLinha.every(function(valor) {
+    return texto(valor) === '';
+  });
+
+  if (vazio) {
+    aba.getRange(1, 1, 1, config.cabecalho.length).setValues([config.cabecalho]);
+    return;
+  }
+
+  config.cabecalho.forEach(function(nome, indice) {
+    if (!texto(primeiraLinha[indice])) {
+      aba.getRange(1, indice + 1).setValue(nome);
+    }
+  });
+}
+
+function valorParametro(e, nome) {
+  const p = e.parameter;
+  if (nome === 'tag') return texto(p.tag || p.codigo);
+  if (nome === 'nome') return texto(p.nome || p.descricao);
+  if (nome === 'porta') return texto(p.porta || p.setor);
+  if (nome === 'ativa') return texto(p.ativa || p.observacao);
+  return texto(p[nome]);
+}
+
+function termosBusca(item, config) {
+  return config.cabecalho
+    .filter(function(nome) { return nome !== 'termos_busca'; })
+    .map(function(nome) { return texto(item[nome]); })
+    .join(' ')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase();
+}
+
+function itemDaLinha(linha, numeroLinha, config) {
+  const item = {};
+  config.cabecalho.forEach(function(nome, indice) {
+    item[nome] = texto(linha[indice]);
+  });
+  item.linha = numeroLinha;
+  return item;
+}
+
+function itemDosParametros(e, config) {
+  const item = {};
+  config.cabecalho.forEach(function(nome) {
+    if (nome !== 'termos_busca') item[nome] = valorParametro(e, nome);
+  });
+  item.termos_busca = termosBusca(item, config);
+  return item;
+}
+
+function chaveItem(item, config) {
+  return normalizar(item[config.cabecalho[0]]);
+}
+
+function camposObrigatoriosOk(item, config) {
+  return config.obrigatorios.every(function(nome) {
+    return texto(item[nome]);
+  });
+}
+
+function validarToken(e) {
+  if (!TOKEN) return true;
+  return String(e.parameter.token || '') === TOKEN;
+}
+
+function validarSenhaExcluir(e) {
+  const senha = String(e.parameter.senha || '').trim();
+  return /^\d{4}$/.test(senha) && senha === SENHA_EXCLUIR;
+}
+
+function listarItens(e) {
+  const config = configAba(e);
+  const aba = abrirAba(e);
+  garantirCabecalho(aba, config);
+  const valores = aba.getDataRange().getValues();
+
+  return valores.slice(1)
+    .map(function(linha, indice) {
+      return itemDaLinha(linha, indice + 2, config);
+    })
+    .filter(function(item) {
+      return config.cabecalho.some(function(nome) {
+        return nome !== 'termos_busca' && texto(item[nome]);
+      });
+    });
+}
+
+function cadastrarItem(e) {
+  const config = configAba(e);
+  const aba = abrirAba(e);
+  garantirCabecalho(aba, config);
+  const item = itemDosParametros(e, config);
+
+  if (!camposObrigatoriosOk(item, config)) {
+    return {
+      ok: false,
+      codigo: 'campos_obrigatorios',
+      mensagem: 'Preencha os campos obrigatorios.'
+    };
+  }
+
+  const chaveNova = chaveItem(item, config);
+  const jaExiste = listarItens(e).some(function(existente) {
+    return chaveItem(existente, config) === chaveNova;
+  });
+
+  if (jaExiste) {
+    return {
+      ok: false,
+      codigo: 'duplicado',
+      mensagem: 'Esse cadastro ja existe na planilha.'
+    };
+  }
+
+  aba.appendRow(config.cabecalho.map(function(nome) {
+    return item[nome] || '';
+  }));
+
+  return {
+    ok: true,
+    codigo: 'salvo',
+    mensagem: 'Item cadastrado.',
+    item: item
+  };
+}
+
+function localizarLinha(e, config) {
+  const aba = abrirAba(e);
+  const ultimaLinha = aba.getLastRow();
+  const linhaInformada = Number(e.parameter.linha || 0);
+  const codigoOriginal = normalizar(e.parameter.codigo_original || e.parameter.tag_original || e.parameter.codigo || e.parameter.tag);
+
+  if (linhaInformada >= 2 && linhaInformada <= ultimaLinha) return linhaInformada;
+  if (!codigoOriginal || ultimaLinha < 2) return 0;
+
+  const valores = aba.getRange(2, 1, ultimaLinha - 1, 1).getValues();
+  for (var i = 0; i < valores.length; i++) {
+    if (normalizar(valores[i][0]) === codigoOriginal) return i + 2;
+  }
+  return 0;
+}
+
+function atualizarItem(e) {
+  const config = configAba(e);
+  const aba = abrirAba(e);
+  garantirCabecalho(aba, config);
+  const item = itemDosParametros(e, config);
+
+  if (!camposObrigatoriosOk(item, config)) {
+    return {
+      ok: false,
+      codigo: 'campos_obrigatorios',
+      mensagem: 'Preencha os campos obrigatorios.'
+    };
+  }
+
+  const linhaAlvo = localizarLinha(e, config);
+  if (!linhaAlvo) {
+    return {
+      ok: false,
+      codigo: 'nao_encontrado',
+      mensagem: 'Item nao encontrado para atualizar.'
+    };
+  }
+
+  const ultimaLinha = aba.getLastRow();
+  const chaveNova = chaveItem(item, config);
+  if (ultimaLinha >= 2) {
+    const valores = aba.getRange(2, 1, ultimaLinha - 1, 1).getValues();
+    for (var i = 0; i < valores.length; i++) {
+      const linhaAtual = i + 2;
+      if (linhaAtual !== linhaAlvo && normalizar(valores[i][0]) === chaveNova) {
+        return {
+          ok: false,
+          codigo: 'duplicado',
+          mensagem: 'Esse cadastro ja existe em outra linha.'
+        };
+      }
+    }
+  }
+
+  aba.getRange(linhaAlvo, 1, 1, config.cabecalho.length).setValues([
+    config.cabecalho.map(function(nome) {
+      return item[nome] || '';
+    })
+  ]);
+
+  return {
+    ok: true,
+    codigo: 'atualizado',
+    mensagem: 'Item atualizado.',
+    item: item
+  };
+}
+
+function deletarItem(e) {
+  if (!validarSenhaExcluir(e)) {
+    return {
+      ok: false,
+      codigo: 'senha_invalida',
+      mensagem: 'Senha invalida.'
+    };
+  }
+
+  const config = configAba(e);
+  const aba = abrirAba(e);
+  garantirCabecalho(aba, config);
+  const linhaAlvo = localizarLinha(e, config);
+
+  if (!linhaAlvo) {
+    return {
+      ok: false,
+      codigo: 'nao_encontrado',
+      mensagem: 'Item nao encontrado na planilha.'
+    };
+  }
+
+  aba.deleteRow(linhaAlvo);
+  return {
+    ok: true,
+    codigo: 'deletado',
+    mensagem: 'Item deletado.'
+  };
+}
+
+function obterCallback(e) {
+  const callback = String(e.parameter.callback || '').trim();
+  return /^[a-zA-Z_$][\w$]*(\.[a-zA-Z_$][\w$]*)*$/.test(callback)
+    ? callback
+    : '';
+}
+
+function responder(e, dados) {
+  const callback = obterCallback(e);
+  const conteudo = callback
+    ? callback + '(' + JSON.stringify(dados) + ');'
+    : JSON.stringify(dados);
+
+  return ContentService
+    .createTextOutput(conteudo)
+    .setMimeType(callback ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  e = e || { parameter: {} };
+
+  if (!validarToken(e)) {
+    return responder(e, {
+      ok: false,
+      codigo: 'token_invalido',
+      mensagem: 'Token invalido.'
+    });
+  }
+
+  const acao = normalizar(e.parameter.acao || 'listar');
+
+  if (acao === 'listar') return responder(e, { ok: true, itens: listarItens(e) });
+  if (acao === 'cadastrar') return responder(e, cadastrarItem(e));
+  if (acao === 'atualizar') return responder(e, atualizarItem(e));
+  if (acao === 'deletar') return responder(e, deletarItem(e));
+
+  return responder(e, {
+    ok: false,
+    codigo: 'acao_invalida',
+    mensagem: 'Acao invalida.'
+  });
+}
+
+function doPost(e) {
+  return doGet(e);
+}

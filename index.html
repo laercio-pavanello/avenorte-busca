@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Busca de Peças - Avenorte</title>
 <meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.webmanifest">
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
@@ -195,6 +196,15 @@ montarSetores()
 aplicarFiltro()
 }}
 
+function carregarDadosSalvos(){
+statusEl.textContent = 'Dados salvos'
+statusEl.className = 'text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-300'
+dados = carregarCache()
+if (abaAtual === 'dados') dados = juntarListas(dados, dadosEmbutidos())
+montarSetores()
+aplicarFiltro()
+}
+
 function carregarApi() {
   return chamarJsonp(abaAtual === 'dados'? API_PECAS_URL : API_CCM_URL, {acao: 'listar', aba: abaAtual})
 }
@@ -336,7 +346,7 @@ function trocarAba(novaAba) {
     'flex-1 px-4 py-2.5 rounded-xl bg-transparent text-slate-300 hover:bg-slate-800'
   q.value = ''
   setor.value = ''
-  carregarDados()
+  carregarDadosSalvos()
 }
 
 async function adicionarItem(obj){
@@ -538,11 +548,10 @@ q.oninput = () => {
 }
 setor.onchange = aplicarFiltro
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations()
-    .then(registros => registros.forEach(registro => registro.unregister()))
+  navigator.serviceWorker.register('service-worker.js')
     .catch(() => {})
 }
-carregarDados()
+carregarDadosSalvos()
 </script>
 </body>
 </html>
