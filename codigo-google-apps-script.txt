@@ -15,6 +15,18 @@ const ABAS = {
   }
 };
 
+const APELIDOS_CABECALHO = {
+  codigo: ['codigo', 'código', 'cod', 'tag'],
+  descricao: ['descricao', 'descrição', 'nome', 'item'],
+  setor: ['setor', 'porta', 'local'],
+  observacao: ['observacao', 'observação', 'ativa', 'obs'],
+  tag: ['tag', 'codigo', 'código', 'cod'],
+  nome: ['nome', 'descricao', 'descrição', 'item'],
+  porta: ['porta', 'setor', 'local'],
+  ativa: ['ativa', 'observacao', 'observação', 'status'],
+  termos_busca: ['termos_busca', 'termos busca', 'busca']
+};
+
 function texto(valor) {
   return String(valor || '').trim().replace(/\s+/g, ' ');
 }
@@ -59,6 +71,29 @@ function garantirCabecalho(aba, config) {
   });
 }
 
+function indicesPorCabecalho(aba, config) {
+  const largura = Math.max(aba.getLastColumn(), config.cabecalho.length);
+  const cabecalhoReal = aba.getRange(1, 1, 1, largura).getDisplayValues()[0]
+    .map(function(valor) { return normalizar(valor).replace(/_/g, ' '); });
+  const indices = {};
+
+  config.cabecalho.forEach(function(nome, indicePadrao) {
+    const apelidos = (APELIDOS_CABECALHO[nome] || [nome]).map(function(valor) {
+      return normalizar(valor).replace(/_/g, ' ');
+    });
+    let indiceEncontrado = -1;
+    for (var i = 0; i < cabecalhoReal.length; i++) {
+      if (apelidos.indexOf(cabecalhoReal[i]) !== -1) {
+        indiceEncontrado = i;
+        break;
+      }
+    }
+    indices[nome] = indiceEncontrado >= 0 ? indiceEncontrado : indicePadrao;
+  });
+
+  return indices;
+}
+
 function valorParametro(e, nome) {
   const p = e.parameter;
   if (nome === 'tag') return texto(p.tag || p.codigo);
@@ -78,10 +113,11 @@ function termosBusca(item, config) {
     .toUpperCase();
 }
 
-function itemDaLinha(linha, numeroLinha, config) {
+function itemDaLinha(linha, numeroLinha, config, indices) {
   const item = {};
   config.cabecalho.forEach(function(nome, indice) {
-    item[nome] = texto(linha[indice]);
+    const indiceReal = indices && typeof indices[nome] === 'number' ? indices[nome] : indice;
+    item[nome] = texto(linha[indiceReal]);
   });
   item.linha = numeroLinha;
   return item;
@@ -120,11 +156,12 @@ function listarItens(e) {
   const config = configAba(e);
   const aba = abrirAba(e);
   garantirCabecalho(aba, config);
-  const valores = aba.getDataRange().getValues();
+  const valores = aba.getDataRange().getDisplayValues();
+  const indices = indicesPorCabecalho(aba, config);
 
   return valores.slice(1)
     .map(function(linha, indice) {
-      return itemDaLinha(linha, indice + 2, config);
+      return itemDaLinha(linha, indice + 2, config, indices);
     })
     .filter(function(item) {
       return config.cabecalho.some(function(nome) {

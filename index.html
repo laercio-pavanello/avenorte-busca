@@ -125,7 +125,13 @@ function ehItemCCM(item) {
 }
 
 function filtrarAbaAtual(lista) {
-  return lista.filter(item => abaAtual === 'ccm' ? ehItemCCM(item) : !ehItemCCM(item))
+  return lista.filter(item => {
+    const codigo = pegar(item, 'codigo', 'tag')
+    const codigoNormal = semAcento(codigo)
+    const pareceData = codigoNormal.includes('gmt') || /^[a-z]{3}\s+[a-z]{3}\s+\d{2}\s+\d{4}/.test(codigoNormal)
+    if (pareceData) return false
+    return abaAtual === 'ccm' ? ehItemCCM(item) : !ehItemCCM(item)
+  })
 }
 
 function normalizarItem(item) {

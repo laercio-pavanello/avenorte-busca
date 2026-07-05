@@ -1,4 +1,4 @@
-const CACHE_NAME = 'busca-pecas-avenorte-v12';
+const CACHE_NAME = 'busca-pecas-avenorte-v13';
 const ASSETS = [
   './',
   './index.html',
