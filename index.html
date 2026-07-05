@@ -21,6 +21,7 @@
 <div class="flex gap-2 mb-6 bg-slate-900 p-1 rounded-2xl border border-slate-800">
   <button id="abaPecas" class="flex-1 px-4 py-2.5 rounded-xl bg-sky-500 text-slate-950 font-semibold">Peças</button>
   <button id="abaCCM" class="flex-1 px-4 py-2.5 rounded-xl bg-transparent text-slate-300 hover:bg-slate-800">CCM</button>
+  <a href="bot-pdf.html" class="flex-1 px-4 py-2.5 rounded-xl bg-transparent text-slate-300 hover:bg-slate-800 text-center">Pavanello Bot</a>
 </div>
 
 <div class="grid md:grid-cols-3 gap-4 mb-6">
@@ -181,13 +182,17 @@ statusEl.textContent = 'Carregando...'
 statusEl.className = 'text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-300'
 try{
 const j = await carregarApi()
+if (j && j.ok === false) throw new Error(j.mensagem || j.erro || 'Erro ao carregar planilha.')
 const dadosApi = Array.isArray(j)? j : (j.itens || j.data || [])
-dados = filtrarAbaAtual(juntarListas(dadosApi))
+const listaNova = filtrarAbaAtual(juntarListas(dadosApi))
+if (!listaNova.length) throw new Error('A planilha retornou uma lista vazia.')
+dados = listaNova
 salvarCache(dados)
 montarSetores()
 aplicarFiltro()
 statusEl.textContent = 'Online'
 statusEl.className = 'text-xs px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+return true
 }catch(e){
 console.error(e)
 statusEl.textContent = 'Offline'
@@ -196,6 +201,7 @@ dados = carregarCache()
 dados = filtrarAbaAtual(dados)
 montarSetores()
 aplicarFiltro()
+return false
 }}
 
 function carregarDadosSalvos(){
@@ -209,6 +215,13 @@ aplicarFiltro()
 
 function carregarApi() {
   return chamarJsonp(abaAtual === 'dados'? API_PECAS_URL : API_CCM_URL, {acao: 'listar', aba: abaAtual})
+}
+
+function salvarItemLocal(obj) {
+  dados = filtrarAbaAtual(juntarListas(dados, [obj]))
+  salvarCache(dados)
+  montarSetores()
+  aplicarFiltro()
 }
 
 function chamarJsonp(url, params = {}) {
@@ -358,9 +371,10 @@ const res = abaAtual === 'dados'
   ? await chamarJsonp(API_PECAS_URL, {acao: 'cadastrar', aba: abaAtual, ...obj})
   : await chamarJsonp(API_CCM_URL, {acao: 'cadastrar', aba: abaAtual, ...obj})
 if(res.ok){
-await carregarDados()
-statusEl.textContent = 'Salvo!'
-setTimeout(()=>statusEl.textContent = 'Online', 1500)
+salvarItemLocal(res.item || obj)
+const atualizou = await carregarDados()
+statusEl.textContent = atualizou ? 'Salvo!' : 'Salvo no aparelho'
+setTimeout(()=>statusEl.textContent = atualizou ? 'Online' : 'Dados salvos', 1500)
 return true
 } else {
 statusEl.textContent = 'Erro'
