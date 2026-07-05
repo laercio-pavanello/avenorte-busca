@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pavanello Bot</title>
+<meta name="theme-color" content="#0f172a">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100">
+<header class="sticky top-0 z-20 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
+  <div class="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3">
+    <img src="icon.svg" alt="" class="h-9 w-9">
+    <div>
+      <div class="text-lg font-semibold leading-tight">Pavanello <span class="text-sky-400">Bot</span></div>
+      <div id="pdfStatus" class="text-xs text-slate-400">Pronto</div>
+    </div>
+    <button id="btnVoltar" type="button" class="ml-auto rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800">Voltar</button>
+  </div>
+</header>
+
+<main class="mx-auto grid w-full max-w-6xl gap-4 px-4 py-5 lg:grid-cols-[360px_1fr]">
+  <section class="rounded-lg border border-slate-800 bg-slate-900 p-4">
+    <div class="flex items-center justify-between gap-3">
+      <h1 class="text-xl font-semibold">Manuais</h1>
+      <button id="btnLimparTudo" type="button" class="rounded-lg border border-red-500/30 px-3 py-2 text-sm font-semibold text-red-200 hover:bg-red-500/10">Limpar</button>
+    </div>
+
+    <label for="pdfInput" class="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-slate-700 bg-slate-950 px-4 py-6 text-center hover:border-sky-500/70">
+      <span class="text-sm font-semibold text-sky-300">Adicionar PDFs</span>
+      <span class="mt-1 text-xs text-slate-400">Selecione v&aacute;rios manuais de uma vez</span>
+    </label>
+    <input id="pdfInput" type="file" accept="application/pdf,.pdf" multiple class="hidden">
+
+    <div class="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
+      <div class="rounded-lg bg-slate-950 p-3">
+        <div id="totalDocs" class="text-lg font-bold text-slate-100">0</div>
+        <div class="text-slate-400">PDFs</div>
+      </div>
+      <div class="rounded-lg bg-slate-950 p-3">
+        <div id="totalPaginas" class="text-lg font-bold text-slate-100">0</div>
+        <div class="text-slate-400">P&aacute;ginas</div>
+      </div>
+      <div class="rounded-lg bg-slate-950 p-3">
+        <div id="totalTrechos" class="text-lg font-bold text-slate-100">0</div>
+        <div class="text-slate-400">Trechos</div>
+      </div>
+    </div>
+
+    <div id="listaDocs" class="mt-4 grid gap-2"></div>
+  </section>
+
+  <section class="grid min-h-[calc(100vh-120px)] grid-rows-[1fr_auto] rounded-lg border border-slate-800 bg-slate-900">
+    <div id="chat" class="space-y-3 overflow-auto p-4">
+      <div class="rounded-lg border border-slate-800 bg-slate-950 p-4">
+        <div class="font-semibold text-slate-100">Pergunte sobre os PDFs da empresa</div>
+        <div class="mt-2 flex flex-wrap gap-2">
+          <button type="button" data-pergunta="Qual o procedimento principal deste manual?" class="sugestao rounded-full bg-slate-800 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-700">Procedimento principal</button>
+          <button type="button" data-pergunta="Quais codigos ou pecas aparecem?" class="sugestao rounded-full bg-slate-800 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-700">C&oacute;digos e pe&ccedil;as</button>
+          <button type="button" data-pergunta="Quais cuidados de seguranca sao citados?" class="sugestao rounded-full bg-slate-800 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-700">Seguran&ccedil;a</button>
+        </div>
+      </div>
+    </div>
+
+    <form id="formPergunta" class="border-t border-slate-800 p-4">
+      <div class="grid gap-2 sm:grid-cols-[1fr_auto]">
+        <input id="campoPergunta" type="search" autocomplete="off" placeholder="Digite sua pergunta..." class="min-h-12 rounded-lg border border-slate-700 bg-slate-950 px-4 text-slate-100 outline-none focus:border-sky-500">
+        <button id="btnPerguntar" type="submit" class="min-h-12 rounded-lg bg-sky-500 px-5 font-semibold text-slate-950 hover:bg-sky-400">Perguntar</button>
+      </div>
+    </form>
+  </section>
+</main>
+
+<script type="module">
+import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.min.mjs';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.worker.min.mjs';
+
+const STORAGE_KEY = 'avenorte-bot-pdf-v1';
+const DB_NAME = 'avenorte-bot-pdf-db';
+const DB_STORE = 'docs';
+const MAX_CHUNK_CHARS = 950;
+const estado = {
+  docs: [],
+  chunks: []
+};
+
+const el = seletor => document.querySelector(seletor);
+const chat = el('#chat');
+const statusEl = el('#pdfStatus');
+const campoPergunta = el('#campoPergunta');
+
+function abrirBanco() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(DB_STORE)) {
+        db.createObjectStore(DB_STORE, { keyPath: 'id' });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function lerDocsBanco() {
+  const db = await abrirBanco();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, 'readonly');
+    const request = tx.objectStore(DB_STORE).getAll();
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error);
+    tx.oncomplete = () => db.close();
+  });
+}
+
+async function salvarDocBanco(doc) {
+  const db = await abrirBanco();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).put(doc);
+    tx.oncomplete = () => {
+      db.close();
+      resolve(true);
+    };
+    tx.onerror = () => {
+      db.close();
+      reject(tx.error);
+    };
+  });
+}
+
+async function apagarDocBanco(id) {
+  const db = await abrirBanco();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).delete(id);
+    tx.oncomplete = () => {
+      db.close();
+      resolve(true);
+    };
+    tx.onerror = () => {
+      db.close();
+      reject(tx.error);
+    };
+  });
+}
+
+async function limparBanco() {
+  const db = await abrirBanco();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).clear();
+    tx.oncomplete = () => {
+      db.close();
+      resolve(true);
+    };
+    tx.onerror = () => {
+      db.close();
+      reject(tx.error);
+    };
+  });
+}
+
+function lerDocsAntigos() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function salvarFallback() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(estado.docs));
+    return true;
+  } catch {
+    statusEl.textContent = 'Base carregada nesta sessao';
+    adicionarMensagem('bot', '<div class="font-semibold">O navegador ficou sem espa&ccedil;o para salvar todos os PDFs.</div><div class="mt-2 text-sm text-slate-400">A busca continua funcionando agora, mas alguns documentos podem n&atilde;o ficar guardados ao fechar a tela.</div>');
+    return false;
+  }
+}
+
+async function carregarBase() {
+  try {
+    const docs = await lerDocsBanco();
+    if (docs.length) return docs;
+
+    const antigos = lerDocsAntigos();
+    for (const doc of antigos) await salvarDocBanco(doc);
+    return antigos;
+  } catch {
+    return lerDocsAntigos();
+  }
+}
+
+async function salvarDoc(doc) {
+  try {
+    await salvarDocBanco(doc);
+    return true;
+  } catch {
+    return salvarFallback();
+  }
+}
+
+async function removerDoc(id) {
+  estado.docs = estado.docs.filter(doc => doc.id !== id);
+  try {
+    await apagarDocBanco(id);
+  } catch {
+    salvarFallback();
+  }
+}
+
+async function limparBase() {
+  estado.docs = [];
+  try {
+    await limparBanco();
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    localStorage.setItem(STORAGE_KEY, '[]');
+  }
+}
+
+function texto(valor) {
+  return String(valor ?? '').trim().replace(/\s+/g, ' ');
+}
+
+function normalizar(valor) {
+  return texto(valor).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function escapar(valor) {
+  return String(valor ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function palavrasImportantes(pergunta) {
+  const bloqueadas = new Set(['a','o','os','as','um','uma','de','da','do','das','dos','em','no','na','nos','nas','e','ou','para','por','com','que','qual','quais','como','onde','este','esta','isto','sobre','manual','pdf']);
+  return normalizar(pergunta)
+    .split(/[^a-z0-9]+/i)
+    .filter(palavra => palavra.length > 2 && !bloqueadas.has(palavra));
+}
+
+function quebrarTexto(conteudo) {
+  const paragrafos = conteudo.split(/\n{2,}|(?<=\.)\s+(?=[A-Z0-9])/).map(texto).filter(Boolean);
+  const chunks = [];
+  let atual = '';
+
+  paragrafos.forEach(paragrafo => {
+    if ((atual + ' ' + paragrafo).length > MAX_CHUNK_CHARS && atual) {
+      chunks.push(atual);
+      atual = paragrafo;
+      return;
+    }
+    atual = texto(`${atual} ${paragrafo}`);
+  });
+
+  if (atual) chunks.push(atual);
+  return chunks;
+}
+
+function reconstruirIndice() {
+  estado.chunks = [];
+  estado.docs.forEach(doc => {
+    doc.pages.forEach(page => {
+      quebrarTexto(page.text).forEach(trecho => {
+        estado.chunks.push({
+          docId: doc.id,
+          docName: doc.name,
+          page: page.page,
+          text: trecho,
+          search: normalizar(trecho)
+        });
+      });
+    });
+  });
+}
+
+function atualizarResumo() {
+  const paginas = estado.docs.reduce((total, doc) => total + doc.pages.length, 0);
+  el('#totalDocs').textContent = estado.docs.length;
+  el('#totalPaginas').textContent = paginas;
+  el('#totalTrechos').textContent = estado.chunks.length;
+  statusEl.textContent = estado.docs.length ? 'Base carregada' : 'Pronto';
+}
+
+function renderDocs() {
+  el('#listaDocs').innerHTML = estado.docs.map(doc => `
+    <div class="rounded-lg border border-slate-800 bg-slate-950 p-3">
+      <div class="flex items-start gap-2">
+        <div class="min-w-0 flex-1">
+          <div class="break-words text-sm font-semibold text-slate-100">${escapar(doc.name)}</div>
+          <div class="mt-1 text-xs text-slate-400">${doc.pages.length} p&aacute;gina(s)</div>
+        </div>
+        <button type="button" data-remover="${escapar(doc.id)}" class="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800">Remover</button>
+      </div>
+    </div>
+  `).join('') || '<div class="rounded-lg border border-slate-800 bg-slate-950 p-4 text-sm text-slate-400">Nenhum PDF carregado.</div>';
+
+  document.querySelectorAll('[data-remover]').forEach(botao => {
+    botao.onclick = async () => {
+      await removerDoc(botao.dataset.remover);
+      reconstruirIndice();
+      renderTudo();
+    };
+  });
+}
+
+function renderTudo() {
+  renderDocs();
+  atualizarResumo();
+}
+
+async function extrairPdf(file) {
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+  const pages = [];
+
+  for (let numero = 1; numero <= pdf.numPages; numero++) {
+    statusEl.textContent = `Lendo ${file.name} - pagina ${numero}/${pdf.numPages}`;
+    const page = await pdf.getPage(numero);
+    const content = await page.getTextContent();
+    const pageText = content.items.map(item => item.str).join(' ');
+    pages.push({ page: numero, text: texto(pageText) });
+  }
+
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    name: file.name,
+    addedAt: new Date().toISOString(),
+    pages
+  };
+}
+
+function pontuar(chunk, termos, pergunta) {
+  if (!termos.length) return 0;
+  const docSearch = normalizar(chunk.docName);
+  const termosConteudo = termos.filter(termo => !docSearch.includes(termo));
+  const termosBase = termosConteudo.length ? termosConteudo : termos;
+  const encontrados = termosBase.filter(termo => chunk.search.includes(termo));
+  if (!encontrados.length) return 0;
+
+  let pontos = 0;
+  encontrados.forEach(termo => {
+    const ocorrencias = chunk.search.split(termo).length - 1;
+    pontos += Math.min(ocorrencias, 6) * (termo.length > 5 ? 5 : 3);
+  });
+
+  const fraseCompleta = normalizar(pergunta);
+  const fraseSemDocumento = termosBase.join(' ');
+  if (fraseCompleta && chunk.search.includes(fraseCompleta)) pontos += 120;
+  if (fraseSemDocumento && chunk.search.includes(fraseSemDocumento)) pontos += 90;
+  if (encontrados.length === termosBase.length) pontos += 45;
+
+  const posicoes = termosBase
+    .map(termo => chunk.search.indexOf(termo))
+    .filter(posicao => posicao >= 0)
+    .sort((a, b) => a - b);
+  if (posicoes.length >= 2) {
+    const distancia = posicoes[posicoes.length - 1] - posicoes[0];
+    if (distancia < 80) pontos += 55;
+    else if (distancia < 180) pontos += 25;
+  }
+
+  if (termos.some(termo => docSearch.includes(termo))) pontos += 12;
+
+  const perguntaBusca = normalizar(pergunta);
+  const qtdParametros = (chunk.text.match(/\bP\d{3,5}\b/gi) || []).length;
+  if (qtdParametros > 10 && !/\bp\d{3,5}\b/i.test(perguntaBusca)) pontos *= 0.35;
+  if (chunk.search.includes('softplc') && !perguntaBusca.includes('softplc')) pontos *= 0.3;
+
+  return pontos;
+}
+
+function termosEncontrados(chunk, termos) {
+  const docSearch = normalizar(chunk.docName);
+  return termos.filter(termo => chunk.search.includes(termo) || docSearch.includes(termo));
+}
+
+function buscarResposta(pergunta) {
+  const termos = palavrasImportantes(pergunta);
+  return estado.chunks
+    .map(chunk => ({
+      ...chunk,
+      score: pontuar(chunk, termos, pergunta),
+      termos: termosEncontrados(chunk, termos),
+      termosConteudo: termos.filter(termo => chunk.search.includes(termo))
+    }))
+    .filter(chunk => chunk.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4);
+}
+
+function dividirFrases(textoCompleto) {
+  return texto(textoCompleto)
+    .split(/(?<=[.!?])\s+|(?=\b[A-Z]{2,}\b)|(?=\bP\d{3,}\b)/)
+    .map(frase => frase.replace(/\s+/g, ' ').trim())
+    .filter(frase => frase.length > 18);
+}
+
+function pontuarFrase(frase, termos) {
+  const base = normalizar(frase);
+  const encontrados = termos.filter(termo => base.includes(termo));
+  const todos = encontrados.length === termos.length && termos.length > 1;
+  return encontrados.reduce((total, termo) => {
+    if (!base.includes(termo)) return total;
+    return total + (termo.length > 5 ? 3 : 2);
+  }, todos ? 20 : 0);
+}
+
+function cortarTrecho(textoCompleto, termos, limite = 280) {
+  const limpo = texto(textoCompleto);
+  const busca = normalizar(limpo);
+  const posicoes = termos
+    .map(termo => busca.indexOf(termo))
+    .filter(posicao => posicao >= 0);
+  const centro = posicoes.length ? Math.min(...posicoes) : 0;
+  const inicio = Math.max(0, centro - 90);
+  const fim = Math.min(limpo.length, inicio + limite);
+  const prefixo = inicio > 0 ? '...' : '';
+  const sufixo = fim < limpo.length ? '...' : '';
+  return `${prefixo}${limpo.slice(inicio, fim)}${sufixo}`;
+}
+
+function destacarTermos(textoTrecho, termos) {
+  let seguro = escapar(textoTrecho);
+  const unicos = [...new Set(termos)].sort((a, b) => b.length - a.length);
+  unicos.forEach(termo => {
+    if (!termo) return;
+    const termoSeguro = termo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    seguro = seguro.replace(new RegExp(`(${termoSeguro})`, 'gi'), '<mark class="rounded bg-sky-400/25 px-1 text-sky-100">$1</mark>');
+  });
+  return seguro;
+}
+
+function montarPontos(resultados) {
+  const usados = new Set();
+  const pontos = [];
+
+  resultados.forEach(item => {
+    const termosParaFrase = item.termosConteudo?.length ? item.termosConteudo : item.termos;
+    const frases = dividirFrases(item.text)
+      .map(frase => ({ frase, score: pontuarFrase(frase, termosParaFrase) }))
+      .filter(itemFrase => itemFrase.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    const melhor = frases[0]?.frase || cortarTrecho(item.text, termosParaFrase, 260);
+    const chave = normalizar(melhor).slice(0, 120);
+    if (usados.has(chave)) return;
+    usados.add(chave);
+    pontos.push({ ...item, trechoCurto: melhor });
+  });
+
+  return pontos.slice(0, 1);
+}
+
+function adicionarMensagem(tipo, html) {
+  const alinhamento = tipo === 'usuario' ? 'ml-auto bg-sky-500 text-slate-950' : 'mr-auto bg-slate-950 border border-slate-800 text-slate-100';
+  const div = document.createElement('div');
+  div.className = `max-w-3xl rounded-lg p-4 ${alinhamento}`;
+  div.innerHTML = html;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function responder(pergunta) {
+  if (!estado.docs.length) {
+    adicionarMensagem('bot', '<div class="font-semibold">Carregue um PDF primeiro.</div>');
+    return;
+  }
+
+  const resultados = buscarResposta(pergunta);
+  if (!resultados.length) {
+    adicionarMensagem('bot', '<div class="font-semibold">N&atilde;o encontrei isso nos PDFs carregados.</div><div class="mt-2 text-sm text-slate-400">Tente buscar por c&oacute;digo, nome da pe&ccedil;a, equipamento, alarme ou procedimento.</div>');
+    return;
+  }
+
+  const pontos = montarPontos(resultados);
+  const termos = palavrasImportantes(pergunta);
+  const melhor = pontos[0] || {
+    ...resultados[0],
+    trechoCurto: cortarTrecho(resultados[0].text, termos, 300)
+  };
+  const outrasPaginas = resultados
+    .filter(item => !(item.docName === melhor.docName && item.page === melhor.page))
+    .slice(0, 3);
+  const detalhes = outrasPaginas.map(item => `
+    <li class="rounded-md bg-slate-950 p-3">
+      <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+        <span>${escapar(item.docName)}</span>
+        <span>p&aacute;gina ${item.page}</span>
+      </div>
+      <div class="mt-2 text-sm leading-6 text-slate-300">${destacarTermos(cortarTrecho(item.text, termos, 360), termos)}</div>
+    </li>
+  `).join('');
+
+  adicionarMensagem('bot', `
+    <div class="text-xs font-semibold uppercase tracking-wide text-sky-300">Melhor resposta</div>
+    <div class="mt-2 rounded-lg border border-slate-800 bg-slate-900 p-3">
+      <div class="text-sm leading-6 text-slate-100">${destacarTermos(melhor.trechoCurto, termos)}</div>
+      <div class="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
+        <span class="rounded-full bg-sky-500/10 px-2 py-1 font-semibold text-sky-300">Fonte</span>
+        <span>${escapar(melhor.docName)}</span>
+        <span>p&aacute;gina ${melhor.page}</span>
+      </div>
+    </div>
+    ${detalhes ? `
+      <details class="mt-3 rounded-lg border border-slate-800 bg-slate-900 p-3">
+        <summary class="cursor-pointer text-sm font-semibold text-slate-300">Ver outras p&aacute;ginas encontradas</summary>
+        <ol class="mt-3 grid list-none gap-2 p-0">${detalhes}</ol>
+      </details>
+    ` : ''}
+  `);
+}
+
+el('#pdfInput').addEventListener('change', async event => {
+  const files = [...event.target.files].filter(file => file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'));
+  if (!files.length) return;
+
+  for (const file of files) {
+    try {
+      const doc = await extrairPdf(file);
+      estado.docs.push(doc);
+      await salvarDoc(doc);
+      reconstruirIndice();
+      renderTudo();
+    } catch (erro) {
+      console.error(erro);
+      adicionarMensagem('bot', `<div class="font-semibold">N&atilde;o consegui ler ${escapar(file.name)}.</div>`);
+    }
+  }
+
+  event.target.value = '';
+  statusEl.textContent = 'Base carregada';
+});
+
+el('#formPergunta').addEventListener('submit', event => {
+  event.preventDefault();
+  const pergunta = texto(campoPergunta.value);
+  if (!pergunta) return;
+  adicionarMensagem('usuario', escapar(pergunta));
+  campoPergunta.value = '';
+  responder(pergunta);
+});
+
+el('#btnLimparTudo').onclick = async () => {
+  if (!estado.docs.length) return;
+  if (!confirm('Apagar os PDFs salvos neste navegador?')) return;
+  await limparBase();
+  reconstruirIndice();
+  renderTudo();
+};
+
+document.querySelectorAll('.sugestao').forEach(botao => {
+  botao.onclick = () => {
+    campoPergunta.value = botao.dataset.pergunta;
+    campoPergunta.focus();
+  };
+});
+
+el('#btnVoltar').onclick = () => {
+  if (history.length > 1) {
+    history.back();
+    return;
+  }
+  location.href = 'index.html';
+};
+
+async function iniciar() {
+  statusEl.textContent = 'Carregando base...';
+  estado.docs = await carregarBase();
+  reconstruirIndice();
+  renderTudo();
+}
+
+iniciar();
+</script>
+</body>
+</html>

@@ -1,17 +1,16 @@
-CORRECAO V10: NAO APAGAR LISTA BOA
+CORRECAO V11: VISUAL DO CELULAR
 
 Problema:
-- O app salvava/adicionava, mas uma atualizacao vazia podia apagar a lista salva.
-- Depois disso a busca ficava sem resultados.
+- No celular, o app podia abrir sem estilo quando o arquivo externo do Tailwind nao carregava.
+- A tela ficava branca, com botoes pequenos e texto desalinhado.
 
 Mudanca:
-- Se a planilha/API retornar lista vazia ou erro, o app nao salva essa lista vazia por cima da lista boa.
-- Ao adicionar item, ele ja entra na lista local antes de tentar recarregar da planilha.
-- Offline atualizado para v10.
+- Foi adicionado estilo local dentro do index.html.
+- O app continua bonito mesmo offline ou com internet ruim.
+- Offline atualizado para v11.
 
 Depois de publicar:
-1. Teste: https://avenorte-busca.pages.dev/service-worker.js?v=10
-2. Deve aparecer: busca-pecas-avenorte-v10
-3. Abra o app com internet boa.
-4. Clique em Atualizar na aba Pecas.
-5. Adicione um item e veja se ele aparece na lista.
+1. Teste: https://avenorte-busca.pages.dev/service-worker.js?v=11
+2. Deve aparecer: busca-pecas-avenorte-v11
+3. Abra o app no celular.
+4. Atualize a pagina ou feche e abra de novo.
