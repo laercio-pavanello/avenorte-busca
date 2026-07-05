@@ -1,8 +1,7 @@
-const CACHE_NAME = 'busca-pecas-avenorte-v11';
+const CACHE_NAME = 'busca-pecas-avenorte-v12';
 const ASSETS = [
   './',
   './index.html',
-  './bot-pdf.html',
   './busca.html',
   './manifest.webmanifest',
   './icon.svg',
