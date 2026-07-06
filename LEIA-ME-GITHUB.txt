@@ -1,16 +1,22 @@
-CORRECAO V11: VISUAL DO CELULAR
+CORRECAO V15: TRAVA DE ATUALIZACAO
 
-Problema:
-- No celular, o app podia abrir sem estilo quando o arquivo externo do Tailwind nao carregava.
-- A tela ficava branca, com botoes pequenos e texto desalinhado.
+Mudanca principal:
+- Foi adicionado o botao "Travar atualizacao".
+- O mesmo botao vira "Destravar atualizacao".
+- Quando travado, o botao Atualizar nao puxa dados da planilha.
+- O app continua usando os dados salvos no aparelho.
 
-Mudanca:
-- Foi adicionado estilo local dentro do index.html.
-- O app continua bonito mesmo offline ou com internet ruim.
-- Offline atualizado para v11.
+Adicionar, editar e excluir:
+- Continuam funcionando quando o usuario clicar nessas acoes.
+- Depois de adicionar/editar/excluir, o app atualiza a lista local.
+- Se a atualizacao estiver travada, ele nao tenta puxar a lista inteira da planilha depois da acao.
+
+Motivo:
+- Evitar problemas quando o aparelho esta em Wi-Fi ruim, com internet limitada ou "capada".
 
 Depois de publicar:
-1. Teste: https://avenorte-busca.pages.dev/service-worker.js?v=11
-2. Deve aparecer: busca-pecas-avenorte-v11
+1. Teste: https://avenorte-busca.pages.dev/service-worker.js?v=15
+2. Deve aparecer: busca-pecas-avenorte-v15
 3. Abra o app no celular.
-4. Atualize a pagina ou feche e abra de novo.
+4. Use "Travar atualizacao" quando estiver em internet ruim.
+5. Use "Destravar atualizacao" quando estiver no 4G ou Wi-Fi bom e quiser atualizar.
